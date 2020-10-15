@@ -1,8 +1,8 @@
 {
-    "author": "joelfischerr",
-    "identifier": "com.joelfischerr.dueDate",
+    "author": "@unlocked2412",
+    "identifier": "com.unlocked2412.dueDate",
     "version": "0.4",
-    "description": "Move due date of selected tasks.",
+    "description": "Move due date of selected tasks. (Modified by Joel Fischer)",
     "actions": [
         {
             "image": "icon.png",
