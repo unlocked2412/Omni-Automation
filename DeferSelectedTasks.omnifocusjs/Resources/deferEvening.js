@@ -1,48 +1,27 @@
 (() => Object.assign( 
     new PlugIn.Action(selection => {
-
+        // Defer every selected task to 
+        // 5 PM.
         // main :: IO ()
         const main = () => {
-            // addDays :: Int -> Date -> Date
-            const addDays = n => date => {
-                return (
-                    date.setDate(n + date.getDate()),
-                    date
-                );
-            };
-
-            // addWeeks :: Int -> Date -> Date
-            const addWeeks = n => addDays(7 * n);
-
-            // addMonths :: Int -> Date -> Date
-            const addMonths = n => date => {
-                return (
-                    date.setMonth(n + d.getMonth()),
-                    date
-                )
-            };
-
-            // setHours :: Int -> Date -> Date
-            const setHours = n => date => {
-                return (
-                    date.setHours(n, 0, 0),
-                    date
-                );
-            };
-
             const 
-                ts = selection
-                    .tasks
-                    .filter(task => null !== task.deferDate);
+                ts = selection.tasks
 
             return ts.map(task => {
-                    const
-                        taskDate = task.deferDate;
                     return (
                         task.deferDate = setHours(17)(new Date()),
                         task
                     )
                 })
+        };
+
+        // setHours :: Int -> Date -> Date
+        const setHours = n => dte => {
+            const dte2 = new Date(dte);
+            return (
+                dte2.setHours(n, 0, 0),
+                dte2
+            );
         };
 
         // MAIN -----------------------------------------
@@ -52,7 +31,6 @@
             validate: selection => 
                 selection
                 .tasks
-                .filter(task => null !== task.deferDate)
                 .length > 0
         }
     )   
