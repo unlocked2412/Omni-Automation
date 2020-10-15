@@ -13,13 +13,21 @@
 
             // addWeeks :: Int -> Date -> Date
             const addWeeks = n => addDays(7 * n);
-            
+
             // addMonths :: Int -> Date -> Date
             const addMonths = n => date => {
                 return (
                     date.setMonth(n + d.getMonth()),
                     date
                 )
+            };
+
+            // setHours :: Int -> Date -> Date
+            const setHours = n => date => {
+                return (
+                    date.setHours(n + date.getHours(), 0, 0),
+                    date
+                );
             };
 
             const 
@@ -31,7 +39,7 @@
                     const
                         taskDate = task.deferDate;
                     return (
-                        task.deferDate = addDays(1)(taskDate),
+                        task.deferDate = setHours(1)(taskDate),
                         task
                     )
                 })
