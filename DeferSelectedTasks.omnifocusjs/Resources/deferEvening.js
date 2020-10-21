@@ -5,8 +5,11 @@
         // main :: IO ()
         const main = () => {
             const 
-                ts = selection.tasks
-
+                const 
+                 ts = selection
+                     .tasks
+                     .filter(task => null !== task.deferDate);
+            
             return ts.map(task => {
                     return (
                         task.deferDate = setHours(17)(new Date()),

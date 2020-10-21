@@ -8,14 +8,14 @@
                 const 
                     ts = selection
                         .tasks
-                        .filter(task => null !== task.deferDate);
+                        .filter(task => null !== task.dueDate);
                 return ts.map(task => {
-                    const
-                        taskDate = task.deferDate;
+                    //const
+                    //    taskDate = task.dueDate;
                     return (
-                        task.deferDate = until(isWeekend)(
+                        task.dueDate = until(isWeekend)(
                             addDays(1)
-                        )(taskDate),
+                        )(new Date()),
                         task
                     )
                 })
@@ -81,7 +81,7 @@
             validate: selection => 
                 selection
                 .tasks
-                .filter(task => null !== task.deferDate)
+                .filter(task => null !== task.dueDate)
                 .length > 0
         }
     )   

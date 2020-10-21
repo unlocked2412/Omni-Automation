@@ -1,0 +1,37 @@
+{
+    "author": "@unlocked2412",
+    "identifier": "com.unlocked2412.dueDate",
+    "version": "0.4",
+    "description": "Move due date of selected tasks. (Modified by Joel Fischer)",
+    "actions": [
+        {
+            "image": "icon.png",
+            "identifier": "moveDueEvening"
+        },
+        {
+            "image": "icon.png",
+            "identifier": "moveDueThisWeekend"
+        },
+        {
+            "image": "icon.png",
+            "identifier": "moveDueNextWeekend"
+        },
+        {
+            "image": "icon.png",
+            "identifier": "moveDueDay"
+        },
+        {
+            "image": "icon.png",
+            "identifier": "moveDueWeek"
+        },
+        {
+            "image": "icon.png",
+            "identifier": "moveDueMonth"
+        },
+        {
+            "image": "icon.png",
+            "identifier": "moveDueHour"
+        }
+    ],
+    "defaultLocale": "en"
+}

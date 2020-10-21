@@ -1,40 +1,40 @@
-(() => Object.assign( 
+(() => Object.assign(
     new PlugIn.Action(selection => {
 
         // main :: IO ()
         const main = () => {
             // addDays :: Int -> Date -> Date
-            const addDays = n => date => {
+            const addDays = n => dte => {
                 return (
-                    date.setDate(n + date.getDate()),
-                    date
+                    dte.setDate(n + dte.getDate()),
+                    dte
                 );
             };
 
             // addWeeks :: Int -> Date -> Date
-            const addWeeks = n => addDays(7 * n);
+            const addWeeks = n => addDays(7*n);
             
             // addMonths :: Int -> Date -> Date
-            const addMonths = n => date => {
+            const addMonths = n => dte => {
                 return (
-                    date.setMonth(n + d.getMonth()),
-                    date
+                    dte.setMonth(n + dte.getMonth()),
+                    dte
                 )
             };
 
             const 
                 ts = selection
                     .tasks
-                    .filter(task => null !== task.deferDate);
+                    .filter(task => null !== task.dueDate);
 
             return ts.map(task => {
-                    const
-                        taskDate = task.deferDate;
-                    return (
-                        task.deferDate = addDays(1)(taskDate),
-                        task
-                    )
-                })
+                const
+                    taskDate = task.dueDate;
+                return (
+                    task.dueDate = addWeeks(1)(taskDate),
+                    task
+                )
+            })
         };
 
         // MAIN -----------------------------------------
@@ -44,7 +44,7 @@
             validate: selection => 
                 selection
                 .tasks
-                .filter(task => null !== task.deferDate)
+                .filter(task => null !== task.dueDate)
                 .length > 0
         }
     )   

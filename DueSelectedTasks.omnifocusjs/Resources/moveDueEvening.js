@@ -13,7 +13,7 @@
 
             // addWeeks :: Int -> Date -> Date
             const addWeeks = n => addDays(7 * n);
-            
+
             // addMonths :: Int -> Date -> Date
             const addMonths = n => date => {
                 return (
@@ -22,16 +22,24 @@
                 )
             };
 
+            // setHours :: Int -> Date -> Date
+            const setHours = n => date => {
+                return (
+                    date.setHours(n, 0, 0),
+                    date
+                );
+            };
+
             const 
                 ts = selection
                     .tasks
-                    .filter(task => null !== task.deferDate);
+                    .filter(task => null !== task.dueDate);
 
             return ts.map(task => {
                     const
-                        taskDate = task.deferDate;
+                        taskDate = task.dueDate;
                     return (
-                        task.deferDate = addDays(1)(taskDate),
+                        task.dueDate = setHours(17)(new Date()),
                         task
                     )
                 })
@@ -44,7 +52,7 @@
             validate: selection => 
                 selection
                 .tasks
-                .filter(task => null !== task.deferDate)
+                .filter(task => null !== task.dueDate)
                 .length > 0
         }
     )   

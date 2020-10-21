@@ -1,8 +1,9 @@
-(() => Object.assign( 
+(() => Object.assign(
     new PlugIn.Action(selection => {
 
         // main :: IO ()
         const main = () => {
+
             // addDays :: Int -> Date -> Date
             const addDays = n => date => {
                 return (
@@ -17,7 +18,7 @@
             // addMonths :: Int -> Date -> Date
             const addMonths = n => date => {
                 return (
-                    date.setMonth(n + d.getMonth()),
+                    date.setMonth(n + date.getMonth()),
                     date
                 )
             };
@@ -25,16 +26,16 @@
             const 
                 ts = selection
                     .tasks
-                    .filter(task => null !== task.deferDate);
+                    .filter(task => null !== task.dueDate);
 
             return ts.map(task => {
-                    const
-                        taskDate = task.deferDate;
-                    return (
-                        task.deferDate = addDays(1)(taskDate),
-                        task
-                    )
-                })
+                const
+                    taskDate = task.dueDate;
+                return (
+                    task.dueDate = addMonths(1)(taskDate),
+                    task
+                )
+            })
         };
 
         // MAIN -----------------------------------------
@@ -44,7 +45,7 @@
             validate: selection => 
                 selection
                 .tasks
-                .filter(task => null !== task.deferDate)
+                .filter(task => null !== task.dueDate)
                 .length > 0
         }
     )   
