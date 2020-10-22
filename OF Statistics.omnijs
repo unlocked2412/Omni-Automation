@@ -20,26 +20,34 @@
                             intercalate(': '),
                             listFromTuple
                         ),
-                        statsList = compose(
-                            map(tabbedList),
-                            statsFor
+                        foldersStats = map(tabbedList)(
+                            statsFor('Folder')
+                        ),
+                        projectsStats = map(tabbedList)(
+                            statsFor('Project')
+                        ),
+                        tagsStats = map(tabbedList)(
+                            statsFor('Tag')
+                        ),
+                        tasksStats = map(tabbedList)(
+                            statsFor('Task')
                         ),
                         stats = unlines([
                             `INBOX:`,
                             `\t- Inbox items: ${inboxTasks().length}`,
                             `FOLDERS:`,
-                            ...statsList('Folder'),
+                            ...foldersStats,
                             `PROJECTS:`,
-                            ...statsList('Project'),
+                            ...projectsStats,
                             `TAGS:`,
-                            ...statsList('Tag'),
+                            ...tagsStats,
                             `TASKS:`,
-                            ...statsList('Task')
+                            ...tasksStats
                         ]);
                     return new Alert(
                         'OmniFocus Statistics',
                         stats
-                    ).show();
+                    ).show()
                 };
 
                 // OmniFocus OmniJS --------------------------------------------
