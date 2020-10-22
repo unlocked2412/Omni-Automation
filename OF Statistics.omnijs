@@ -20,38 +20,30 @@
                             intercalate(': '),
                             listFromTuple
                         ),
-                        foldersStats = map(tabbedList)(
-                            statsFor('Folder')
-                        ),
-                        projectsStats = map(tabbedList)(
-                            statsFor('Project')
-                        ),
-                        tagsStats = map(tabbedList)(
-                            statsFor('Tag')
-                        ),
-                        tasksStats = map(tabbedList)(
-                            statsFor('Task')
+                        statsList = compose(
+                            map(tabbedList),
+                            statsFor
                         ),
                         stats = unlines([
                             `INBOX:`,
                             `\t- Inbox items: ${inboxTasks().length}`,
                             `FOLDERS:`,
-                            ...foldersStats,
+                            ...statsList('Folder'),
                             `PROJECTS:`,
-                            ...projectsStats,
+                            ...statsList('Project'),
                             `TAGS:`,
-                            ...tagsStats,
+                            ...statsList('Tag'),
                             `TASKS:`,
-                            ...tasksStats
+                            ...statsList('Task')
                         ]);
                     return new Alert(
                         'OmniFocus Statistics',
                         stats
-                    ).show()
+                    ).show();
                 };
 
                 // OmniFocus OmniJS --------------------------------------------
-                // enumValName :: EnumValue -> String
+                // enumValName :: EnumValue -> String 
                 const enumValName = x => {
                     const dct = x.constructor;
                     return Object.getOwnPropertyNames(dct)
