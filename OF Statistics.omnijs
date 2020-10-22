@@ -48,7 +48,7 @@
                     const dct = x.constructor;
                     return Object.getOwnPropertyNames(dct)
                         .find(k => x === dct[k]);
-                };
+                }; 
 
                 const flattenedObjectsByStatus = parent => type => {
                     const tupleFromObj =
