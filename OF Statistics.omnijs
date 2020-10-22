@@ -14,17 +14,23 @@
                 const main = () => {
                     const
                         parent = selection.database,
-                        foldersStats = map(compose(append('\t- '), intercalate(': '), listFromTuple))(
-                            flattenedObjectsByStatus(parent)('Folder')
+                        statsFor = flattenedObjectsByStatus(parent),
+                        tabbedList = compose(
+                            append('\t- '),
+                            intercalate(': '),
+                            listFromTuple
                         ),
-                        projectsStats = map(compose(append('\t- '), intercalate(': '), listFromTuple))(
-                            flattenedObjectsByStatus(parent)('Project')
+                        foldersStats = map(tabbedList)(
+                            statsFor('Folder')
                         ),
-                        tagsStats = map(compose(append('\t- '), intercalate(': '), listFromTuple))(
-                            flattenedObjectsByStatus(parent)('Tag')
+                        projectsStats = map(tabbedList)(
+                            statsFor('Project')
                         ),
-                        tasksStats = map(compose(append('\t- '), intercalate(': '), listFromTuple))(
-                            flattenedObjectsByStatus(parent)('Task')
+                        tagsStats = map(tabbedList)(
+                            statsFor('Tag')
+                        ),
+                        tasksStats = map(tabbedList)(
+                            statsFor('Task')
                         ),
                         stats = unlines([
                             `INBOX:`,
@@ -34,7 +40,7 @@
                             `PROJECTS:`,
                             ...projectsStats,
                             `TAGS:`,
-                            ...tasksStats,
+                            ...tagsStats,
                             `TASKS:`,
                             ...tasksStats
                         ]);
@@ -677,7 +683,7 @@
                         return v;
                     };
 
-                
+
                 // JS Basics ---------------------------------------------------
                 // groupOn :: Eq b => (a -> b) -> [a] -> [[a]]
                 const groupOn = f => groupBy(on(eq)(f))
