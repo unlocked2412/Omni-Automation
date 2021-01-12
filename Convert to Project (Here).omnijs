@@ -1,0 +1,35 @@
+/*{
+	"type": "action"
+}*/
+// Twitter: @unlocked2412
+(() => {
+    // ---------------------- PLUGIN -----------------------
+    return Object.assign(
+        new PlugIn.Action(selection => {
+            'use strict';
+
+            // OMNI JS CODE ---------------------------------------
+            const omniJSContext = () => {
+                // main :: IO ()
+                const main = () => {
+                    const
+                        location = selection
+                        .tasks[0]
+                        .containingProject
+                        .parentFolder;
+
+                    return convertTasksToProjects(
+                        selection.tasks,
+                        location.beginning
+                    )
+                };
+
+                return main();
+            };
+
+            return omniJSContext()
+
+        }), {
+            validate: selection => 0 < selection.tasks.length
+        });
+})();
