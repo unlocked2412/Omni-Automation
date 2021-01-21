@@ -1,0 +1,536 @@
+/*{
+	"type": "action"
+}*/
+// Twitter: @unlocked2412
+(() => {
+    // ---------------------- PLUGIN -----------------------
+    return Object.assign(
+        new PlugIn.Action(selection => {
+            'use strict';
+
+            // OMNI JS CODE ---------------------------------------
+            const omniJSContext = () => {
+                // main :: IO ()
+                const main = () => {
+                    const
+                        selectedContentNodes = selection.window
+                        .content.selectedNodes,
+                        tree = Node(0)(
+                            map(
+                                fmapPureOF(
+                                    x => x.object.estimatedMinutes || 0
+                                )
+                            )(commonAncestors(selectedContentNodes))
+                        ),
+                        totalEstimatedMinutes = foldTree(
+                            x => xs => x + sum(xs)
+                        )(tree)
+                    return (
+                        new Alert(
+                            'Total of estimated minutes',
+                            `${totalEstimatedMinutes} mins\n\n` + (
+                                'in descendants of selected project(s) or task(s).'
+                            )
+                        )
+                    ).show();
+                };
+
+
+                // FUNCTIONS --
+                // https://github.com/RobTrew/prelude-jxa
+                // JS Prelude --------------------------------------------------
+                // Just :: a -> Maybe a
+                const Just = x => ({
+                    type: 'Maybe',
+                    Nothing: false,
+                    Just: x
+                });
+
+                // Left :: a -> Either a b
+                const Left = x => ({
+                    type: 'Either',
+                    Left: x
+                });
+
+                // Node :: a -> [Tree a] -> Tree a
+                const Node = v =>
+                    // Constructor for a Tree node which connects a
+                    // value of some kind to a list of zero or
+                    // more child trees.
+                    xs => ({
+                        type: 'Node',
+                        root: v,
+                        nest: xs || []
+                    });
+
+                // Nothing :: Maybe a
+                const Nothing = () => ({
+                    type: 'Maybe',
+                    Nothing: true,
+                });
+
+                // Right :: b -> Either a b
+                const Right = x => ({
+                    type: 'Either',
+                    Right: x
+                });
+
+                // Tuple (,) :: a -> b -> (a, b)
+                const Tuple = a =>
+                    b => ({
+                        type: 'Tuple',
+                        '0': a,
+                        '1': b,
+                        length: 2
+                    });
+
+                // all :: (a -> Bool) -> [a] -> Bool
+                const all = p =>
+                    // True if p(x) holds for every x in xs.
+                    xs => [...xs].every(p);
+
+                // append (<>) :: [a] -> [a] -> [a]
+                const append = xs =>
+                    // Two lists joined into one.
+                    ys => xs.concat(ys);
+
+                // bind (>>=) :: Monad m => m a -> (a -> m b) -> m b
+                const bind = m =>
+                    mf => (Array.isArray(m) ? (
+                        bindList(m)(mf)
+                    ) : ({
+                        'Either': () => bindLR,
+                        'Maybe': () => bindMay,
+                        'Tuple': () => bindTuple,
+                        'function': () => bindFn
+                    })[m.type || typeof m]())(m)(mf);
+
+                // bindFn (>>=) :: (a -> b) -> (b -> a -> c) -> a -> c
+                const bindFn = f =>
+                    // Binary operator applied over f x and x.
+                    op => x => op(f(x))(x);
+
+                // bindLR (>>=) :: Either a -> 
+                // (a -> Either b) -> Either b
+                const bindLR = m =>
+                    mf => undefined !== m.Left ? (
+                        m
+                    ) : mf(m.Right);
+
+                // bindList (>>=) :: [a] -> (a -> [b]) -> [b]
+                const bindList = xs =>
+                    mf => [...xs].flatMap(mf);
+
+                // bindMay (>>=) :: Maybe a -> (a -> Maybe b) -> Maybe b
+                const bindMay = mb =>
+                    // Nothing if mb is Nothing, or the application of the
+                    // (a -> Maybe b) function mf to the contents of mb.
+                    mf => mb.Nothing ? (
+                        mb
+                    ) : mf(mb.Just);
+
+                // bindTuple (>>=) :: Monoid a => (a, a) -> (a -> (a, b)) -> (a, b)
+                const bindTuple = tpl =>
+                    f => {
+                        const t2 = f(tpl[1]);
+                        return Tuple(mappend(tpl[0])(t2[0]))(
+                            t2[1]
+                        );
+                    };
+
+                // concat :: [[a]] -> [a]
+                // concat :: [String] -> String
+                const concat = xs => (
+                    ys => 0 < ys.length ? (
+                        ys.every(Array.isArray) ? (
+                            []
+                        ) : ''
+                    ).concat(...ys) : ys
+                )(list(xs));
+
+                // draw :: Tree String -> [String]
+                const draw = node => {
+                    // shift :: String -> String -> [String] -> [String]
+                    const shifted = (first, other, xs) => (
+                        [first].concat(
+                            Array.from({
+                                length: xs.length - 1
+                            }, () => other)
+                        ).map(
+                            (y, i) => y.concat(xs[i])
+                        )
+                    );
+                    // drawSubTrees :: [Tree String] -> [String]
+                    const drawSubTrees = xs => {
+                        const lng = xs.length;
+                        return 0 < lng ? (
+                            1 < lng ? (
+                                ['│'].concat(
+                                    shifted('├─ ', '│  ', draw(xs[0]))
+                                )
+                            ).concat(
+                                drawSubTrees(xs.slice(1))
+                            ) : ['│'].concat(
+                                shifted('└─ ', '   ', draw(xs[0]))
+                            )
+                        ) : [];
+                    };
+                    return node.root.split('\n').concat(
+                        drawSubTrees(node.nest)
+                    );
+                };
+
+                // drawTree :: Tree String -> String
+                const drawTree = tree =>
+                    draw(tree).join('\n');
+
+                // enumFromTo :: Int -> Int -> [Int]
+                const enumFromTo = m =>
+                    n => !isNaN(m) ? (
+                        Array.from({
+                            length: 1 + n - m
+                        }, (_, i) => m + i)
+                    ) : enumFromTo_(m)(n);
+
+                // enumFromTo_ :: Enum a => a -> a -> [a]
+                const enumFromTo_ = m => n => {
+                    const [x, y] = [m, n].map(fromEnum),
+                        b = x + (isNaN(m) ? 0 : m - x);
+                    return Array.from({
+                        length: 1 + (y - x)
+                    }, (_, i) => toEnum(m)(b + i));
+                };
+
+                // filter :: (a -> Bool) -> [a] -> [a]
+                const filter = p =>
+                    // The elements of xs which match
+                    // the predicate p.
+                    xs => [...xs].filter(p);
+
+                // first :: (a -> b) -> ((a, c) -> (b, c))
+                const first = f =>
+                    // A simple function lifted to one which applies
+                    // to a tuple, transforming only its first item.
+                    xy => {
+                        const tpl = Tuple(f(xy[0]))(xy[1]);
+                        return Array.isArray(xy) ? (
+                            Array.from(tpl)
+                        ) : tpl;
+                    };
+
+                // fmapTree :: (a -> b) -> Tree a -> Tree b
+                const fmapTree = f => {
+                    // A new tree. The result of a 
+                    // structure-preserving application of f 
+                    // to each root in the existing tree.
+                    const go = t => Node(
+                        f(t.root)
+                    )(
+                        t.nest.map(go)
+                    );
+                    return go;
+                };
+
+                // foldTree :: (a -> [b] -> b) -> Tree a -> b
+                const foldTree = f => {
+                    // The catamorphism on trees. A summary
+                    // value obtained by a depth-first fold.
+                    const go = tree => f(tree.root)(
+                        tree.nest.map(go)
+                    );
+                    return go;
+                };
+
+                // fromEnum :: Enum a => a -> Int
+                const fromEnum = x =>
+                    typeof x !== 'string' ? (
+                        x.constructor === Object ? (
+                            x.value
+                        ) : parseInt(Number(x))
+                    ) : x.codePointAt(0);
+
+                // identity :: a -> a
+                const identity = x =>
+                    // The identity function.
+                    x;
+
+                // join :: Monad m => m (m a) -> m a
+                const join = x =>
+                    bind(x)(identity);
+
+                // length :: [a] -> Int
+                const length = xs =>
+                    // Returns Infinity over objects without finite
+                    // length. This enables zip and zipWith to choose
+                    // the shorter argument when one is non-finite,
+                    // like cycle, repeat etc
+                    'GeneratorFunction' !== xs.constructor
+                    .constructor.name ? (
+                        xs.length
+                    ) : Infinity;
+
+                // list :: StringOrArrayLike b => b -> [a]
+                const list = xs =>
+                    // xs itself, if it is an Array,
+                    // or an Array derived from xs.
+                    Array.isArray(xs) ? (
+                        xs
+                    ) : Array.from(xs || []);
+
+                // map :: (a -> b) -> [a] -> [b]
+                const map = f =>
+                    // The list obtained by applying f
+                    // to each element of xs.
+                    // (The image of xs under f).
+                    xs => [...xs].map(f);
+
+                // mappend (<>) :: Monoid a => a -> a -> a
+                const mappend = a =>
+                    // Associative operation 
+                    // defined for various monoids.
+                    ({
+                        '(a -> b)': () => mappendFn,
+                        'List': () => append,
+                        'Maybe': () => mappendMaybe,
+                        'Num': () => mappendOrd,
+                        'String': () => append,
+                        'Tuple': () => mappendTuple
+                    })[typeName(a)]()(a);
+
+                // mappendFn (<>) :: Monoid b => (a -> b) -> (a -> b) -> (a -> b)
+                const mappendFn = f =>
+                    g => x => mappend(f(x))(
+                        g(x)
+                    );
+
+                // mappendMaybe (<>) :: Maybe a -> Maybe a -> Maybe a
+                const mappendMaybe = a =>
+                    b => a.Nothing ? (
+                        b
+                    ) : b.Nothing ? (
+                        a
+                    ) : Just(
+                        mappend(a.Just)(
+                            b.Just
+                        )
+                    );
+
+                // mappendOrd (<>) :: Ordering -> Ordering -> Ordering
+                const mappendOrd = x =>
+                    y => 0 !== x ? (
+                        x
+                    ) : y;
+
+                // mappendTuple (<>) :: (a, b) -> (a, b) -> (a, b)
+                const mappendTuple = t => t1 =>
+                    Tuple(
+                        mappend(t[0])(t1[0])
+                    )(
+                        mappend(t[1])(t1[1])
+                    );
+
+                // min :: Ord a => a -> a -> a
+                const min = a =>
+                    b => b < a ? b : a;
+
+                // nest :: Tree a -> [a]
+                const nest = tree => {
+                    // Allowing for lazy (on-demand) evaluation.
+                    // If the nest turns out to be a function –
+                    // rather than a list – that function is applied
+                    // here to the root, and returns a list.
+                    const xs = tree.nest;
+                    return 'function' !== typeof xs ? (
+                        xs
+                    ) : xs(root(x));
+                };
+
+                // or :: [Bool] -> Bool
+                const or = xs =>
+                    xs.some(Boolean);
+
+                // replace :: String -> String -> String -> String
+                // replace :: Regex -> String -> String -> String
+                const replace = needle => strNew => strHaystack =>
+                    strHaystack.replace(
+                        'string' !== typeof needle ? (
+                            needle
+                        ) : new RegExp(needle, 'g'),
+                        strNew
+                    );
+
+                // root :: Tree a -> a
+                const root = tree =>
+                    tree.root;
+
+                // show :: a -> String
+                // show :: a -> Int -> Indented String
+                const show = x => {
+                    const
+                        str = x => x.toString(),
+                        t = typeName(x);
+                    return 'Node' !== t ? (
+                        JSON.stringify(
+                            x,
+                            (_, v) => ({
+                                '(a -> b)': () => showFn,
+                                'Bool': () => str,
+                                'Bottom': () => showUndefined,
+                                'Date': () => x => x,
+                                'Either': () => showLR,
+                                'List': () => showList,
+                                'Maybe': () => showMaybe,
+                                'Num': () => str,
+                                'Ratio': () => showRatio,
+                                'String': () => str,
+                                'Tuple': () => showTuple
+                            })[t]()(v)
+                        )
+                    ) : showTree(x);
+                };
+
+                // showFn :: (a -> b) -> String
+                const showFn = f =>
+                    `λ${f}`;
+
+                // showLR :: Either a b -> String
+                const showLR = lr => {
+                    const k = undefined !== lr.Left ? (
+                        'Left'
+                    ) : 'Right';
+                    return k + '(' + unQuoted(show(lr[k])) + ')';
+                };
+
+                // showList :: [a] -> String
+                const showList = xs =>
+                    '[' + xs.map(show)
+                    .join(', ')
+                    .replace(/[\"]/g, '') + ']';
+
+                // showMaybe :: Maybe a -> String
+                const showMaybe = mb =>
+                    mb.Nothing ? (
+                        'Nothing'
+                    ) : 'Just(' + unQuoted(show(mb.Just)) + ')';
+
+                // showRatio :: Ratio -> String
+                const showRatio = r =>
+                    'Ratio' !== r.type ? (
+                        r.toString()
+                    ) : r.n.toString() + (
+                        1 !== r.d ? (
+                            '/' + r.d.toString()
+                        ) : ''
+                    );
+
+                // showTree :: Tree a -> String
+                const showTree = x =>
+                    drawTree(
+                        fmapTree(show)(x)
+                    );
+
+                // showTuple :: Tuple -> String
+                const showTuple = tpl =>
+                    '(' + enumFromTo(0)(tpl.length - 1)
+                    .map(x => unQuoted(show(tpl[x])))
+                    .join(',') + ')';
+
+                // showUndefined :: () -> String
+                const showUndefined = () => '(⊥)';
+
+                // str :: a -> String
+                const str = x =>
+                    Array.isArray(x) && x.every(
+                        v => ('string' === typeof v) && (1 === v.length)
+                    ) ? (
+                        x.join('')
+                    ) : x.toString();
+
+                // sum :: [Num] -> Num
+                const sum = xs =>
+                    // The numeric sum of all values in xs.
+                    xs.reduce((a, x) => a + x, 0);
+
+                // toEnum :: a -> Int -> a
+                const toEnum = e =>
+                    // The first argument is a sample of the type
+                    // allowing the function to make the right mapping
+                    x => ({
+                        'number': Number,
+                        'string': String.fromCodePoint,
+                        'boolean': Boolean,
+                        'object': v => e.min + v
+                    } [typeof e])(x);
+
+                // typeName :: a -> String
+                const typeName = v => {
+                    const t = typeof v;
+                    return 'object' === t ? (
+                        Array.isArray(v) ? (
+                            'List'
+                        ) : 'Date' === v.constructor.name ? (
+                            'Date'
+                        ) : null !== v ? (
+                            v.type || 'Dict'
+                        ) : 'Bottom'
+                    ) : {
+                        'boolean': 'Bool',
+                        'date': 'Date',
+                        'number': 'Num',
+                        'string': 'String',
+                        'function': '(a -> b)'
+                    } [t] || 'Bottom';
+                };
+
+                // unQuoted :: String -> String
+                const unQuoted = s =>
+                    1 < s.length ? (
+                        q => s.slice(
+                            q !== s[0] ? 0 : 1,
+                            q !== s.slice(-1) ? undefined : -1
+                        )
+                    )(
+                        String.fromCodePoint(34)
+                    ) : s;
+
+                // OmniFocus OmniJS --------------------------------------------
+                // ancestors :: [OFItem] -> [OFItem]
+                const ancestors = item => {
+                    const
+                        p = item.parent;
+                    return null === p ? (
+                        []
+                    ) : [p].concat(ancestors(p))
+                }
+
+                // commonAncestors :: [OFItem] -> [OFItem]
+                const commonAncestors = items => (
+                    // Only items which do not descend
+                    // from other items in the list. 
+                    itemSet => items.filter(x =>
+                        all(a => !itemSet.has(a))(ancestors(x))
+                    )
+                )(new Set(items))
+
+                // fmapPureOF :: (OF Item -> a) -> OF Item -> Tree a
+                const fmapPureOF = f => {
+                    const go = x => {
+                        const v = 'Project' !== x.constructor.name ? (
+                            x
+                        ) : x.task;
+                        return Node(f(v))(
+                            v.children.map(go)
+                        );
+                    };
+                    return go;
+                };
+
+                return main();
+            };
+
+            return omniJSContext()
+
+        }), {
+            validate: selection => 0 < selection.window.content.selectedNodes.length
+        });
+})();
