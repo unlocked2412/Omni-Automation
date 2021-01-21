@@ -506,7 +506,7 @@
                 // commonAncestors :: [OFItem] -> [OFItem]
                 const commonAncestors = items => (
                     // Only items which do not descend
-                    // from other items in the list. 
+                    // from other items in the list
                     itemSet => items.filter(x =>
                         all(a => !itemSet.has(a))(ancestors(x))
                     )
