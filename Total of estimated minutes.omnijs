@@ -1,7 +1,7 @@
 /*{
 	"type": "action"
 }*/
-// Twitter: @unlocked2412 Testing
+// Twitter: @unlocked2412
 (() => {
     // ---------------------- PLUGIN -----------------------
     return Object.assign(
