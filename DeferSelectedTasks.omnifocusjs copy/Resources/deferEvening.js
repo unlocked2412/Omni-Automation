@@ -4,11 +4,10 @@
         // 5 PM.
         // main :: IO ()
         const main = () => {
-            const 
-                const 
-                 ts = selection
-                     .tasks
-                     .filter(task => null !== task.deferDate);
+            const
+                ts = selection
+                    .tasks
+                    .filter(task => null !== task.deferDate);
             
             return ts.map(task => {
                     return (
