@@ -9,4 +9,4 @@ A repository with plug-ins and scripts for OmniFocus and OmniOutliner using the 
 ## Adding a linked Plug-Ins folder
 
 Click `Automation > Configure...` menu item.
-Click `Add Linked Folder...`
+Click `Add Linked Folder...` in the recently opened dialog.
