@@ -1,18 +1,14 @@
+/*{
+	"type": "action",
+	"author": "unlocked2412",
+	"version": "0.1",
+	"description": "A single-file OmniFocus plug-in.",
+}*/
 (() => Object.assign(
     new PlugIn.Action(selection => {
 
         // main :: IO ()
         const main = () => {
-
-            // setHours :: Int -> Date -> Date
-            const setHours = n => dte => {
-                const dte2 = new Date(dte);
-                return (
-                    dte2.setHours(n, 0, 0),
-                    dte2
-                );
-            };
-
             const
                 ts = selection
                 .tasks
@@ -26,6 +22,16 @@
                     task
                 )
             })
+        };
+
+        // GENERICS -------------------------------------
+        // setHours :: Int -> Date -> Date
+        const setHours = n => dte => {
+            const dte2 = new Date(dte);
+            return (
+                dte2.setHours(n, 0, 0),
+                dte2
+            );
         };
 
         // MAIN -----------------------------------------

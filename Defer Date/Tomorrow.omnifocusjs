@@ -1,0 +1,57 @@
+/*{
+	"type": "action",
+	"author": "unlocked2412",
+	"version": "0.1",
+	"description": "A single-file OmniFocus plug-in.",
+}*/
+(() => Object.assign(
+    new PlugIn.Action(selection => {
+        // Defer every selected task to 
+        // 5 PM.
+
+        // main :: IO ()
+        const main = () => {
+            const
+                ts = selection
+                .tasks,
+                dte = addDays(1)(
+                    setHours(0)(new Date())
+                );
+
+            return ts.map(task => {
+                return (
+                    task.deferDate = dte,
+                    task
+                )
+            })
+        };
+
+        // GENERICS -------------------------------------
+        // setHours :: Int -> Date -> Date
+        const setHours = n => dte => {
+            const dte2 = new Date(dte);
+            return (
+                dte2.setHours(n, 0, 0),
+                dte2
+            );
+        };
+
+        // addDays :: Int -> Date -> Date
+        const addDays = n => dte => {
+            const dte2 = new Date(dte);
+            return (
+                dte2.setDate(n + dte.getDate()),
+                dte2
+            );
+        };
+
+        // MAIN -----------------------------------------
+        return main()
+
+    }), {
+        validate: selection =>
+            selection
+            .tasks
+            .length > 0
+    }
+))();

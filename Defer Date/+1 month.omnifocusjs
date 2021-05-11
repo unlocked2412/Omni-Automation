@@ -1,17 +1,14 @@
+/*{
+	"type": "action",
+	"author": "unlocked2412",
+	"version": "0.1",
+	"description": "A single-file OmniFocus plug-in.",
+}*/
 (() => Object.assign(
     new PlugIn.Action(selection => {
 
         // main :: IO ()
         const main = () => {
-            // addDays :: Int -> Date -> Date
-            const addDays = n => dte => {
-                const dte2 = new Date(dte);
-                return (
-                    dte2.setDate(n + dte.getDate()),
-                    dte2
-                );
-            };
-
             const
                 ts = selection
                 .tasks
@@ -21,10 +18,20 @@
                 const
                     taskDate = task.deferDate;
                 return (
-                    task.deferDate = addDays(1)(taskDate),
+                    task.deferDate = addMonths(1)(taskDate),
                     task
                 )
             })
+        };
+
+        // GENERICS -------------------------------------
+        // addMonths :: Int -> Date -> Date
+        const addMonths = n => dte => {
+            const dte2 = new Date(dte);
+            return (
+                dte2.setMonth(n + d.getMonth()),
+                dte2
+            );
         };
 
         // MAIN -----------------------------------------
