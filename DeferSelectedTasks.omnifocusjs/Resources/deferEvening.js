@@ -6,8 +6,7 @@
         const main = () => {
             const
                 ts = selection
-                    .tasks
-                    .filter(task => null !== task.deferDate);
+                    .tasks;
             
             return ts.map(task => {
                     return (

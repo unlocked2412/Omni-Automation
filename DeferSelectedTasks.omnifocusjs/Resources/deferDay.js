@@ -1,51 +1,40 @@
-(() => Object.assign( 
+(() => Object.assign(
     new PlugIn.Action(selection => {
 
         // main :: IO ()
         const main = () => {
             // addDays :: Int -> Date -> Date
-            const addDays = n => date => {
+            const addDays = n => dte => {
+                const dte2 = new Date(dte);
                 return (
-                    date.setDate(n + date.getDate()),
-                    date
+                    dte2.setDate(n + dte.getDate()),
+                    dte2
                 );
             };
 
-            // addWeeks :: Int -> Date -> Date
-            const addWeeks = n => addDays(7 * n);
-            
-            // addMonths :: Int -> Date -> Date
-            const addMonths = n => date => {
-                return (
-                    date.setMonth(n + d.getMonth()),
-                    date
-                )
-            };
-
-            const 
+            const
                 ts = selection
-                    .tasks
-                    .filter(task => null !== task.deferDate);
+                .tasks
+                .filter(task => null !== task.deferDate);
 
             return ts.map(task => {
-                    const
-                        taskDate = task.deferDate;
-                    return (
-                        task.deferDate = addDays(1)(taskDate),
-                        task
-                    )
-                })
+                const
+                    taskDate = task.deferDate;
+                return (
+                    task.deferDate = addDays(1)(taskDate),
+                    task
+                )
+            })
         };
 
         // MAIN -----------------------------------------
         return main()
-        
-        }), {
-            validate: selection => 
-                selection
-                .tasks
-                .filter(task => null !== task.deferDate)
-                .length > 0
-        }
-    )   
-)();
+
+    }), {
+        validate: selection =>
+            selection
+            .tasks
+            .filter(task => null !== task.deferDate)
+            .length > 0
+    }
+))();
