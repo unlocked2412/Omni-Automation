@@ -5,10 +5,10 @@
         const omniJSContext = () => {
             // main :: IO ()
             const main = () => {
-                const 
+                const
                     ts = selection
-                        .tasks
-                        .filter(task => null !== task.deferDate);
+                    .tasks
+                    .filter(task => null !== task.deferDate);
                 return ts.map(task => {
                     const
                         taskDate = task.deferDate;
@@ -20,13 +20,14 @@
                     )
                 })
             };
-            
+
             // DATES -----------------------------------------------------
             // addDays :: Int -> Date -> Date
             const addDays = n => dte => {
+                const dte2 = new Date(dte);
                 return (
-                    dte.setDate(n + dte.getDate()),
-                    dte
+                    dte2.setDate(n + dte.getDate()),
+                    dte2
                 );
             };
 
@@ -76,13 +77,12 @@
         };
 
         return omniJSContext()
-        
-        }), {
-            validate: selection => 
-                selection
-                .tasks
-                .filter(task => null !== task.deferDate)
-                .length > 0
-        }
-    )   
-)();
+
+    }), {
+        validate: selection =>
+            selection
+            .tasks
+            .filter(task => null !== task.deferDate)
+            .length > 0
+    }
+))();

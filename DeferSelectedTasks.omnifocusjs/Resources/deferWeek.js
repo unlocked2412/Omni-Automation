@@ -5,27 +5,20 @@
         const main = () => {
             // addDays :: Int -> Date -> Date
             const addDays = n => dte => {
+                const dte2 = new Date(dte);
                 return (
-                    dte.setDate(n + dte.getDate()),
-                    dte
+                    dte2.setDate(n + dte.getDate()),
+                    dte2
                 );
             };
 
             // addWeeks :: Int -> Date -> Date
-            const addWeeks = n => addDays(7*n);
-            
-            // addMonths :: Int -> Date -> Date
-            const addMonths = n => dte => {
-                return (
-                    dte.setMonth(n + dte.getMonth()),
-                    dte
-                )
-            };
+            const addWeeks = n => addDays(7 * n);
 
-            const 
+            const
                 ts = selection
-                    .tasks
-                    .filter(task => null !== task.deferDate);
+                .tasks
+                .filter(task => null !== task.deferDate);
 
             return ts.map(task => {
                 const
@@ -39,13 +32,12 @@
 
         // MAIN -----------------------------------------
         return main()
-        
-        }), {
-            validate: selection => 
-                selection
-                .tasks
-                .filter(task => null !== task.deferDate)
-                .length > 0
-        }
-    )   
-)();
+
+    }), {
+        validate: selection =>
+            selection
+            .tasks
+            .filter(task => null !== task.deferDate)
+            .length > 0
+    }
+))();
