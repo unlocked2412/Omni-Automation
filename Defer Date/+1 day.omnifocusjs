@@ -4,12 +4,6 @@
 	"version": "0.1",
 	"description": "A single-file OmniFocus plug-in.",
 }*/
-/*{
-	"type": "action",
-	"author": "unlocked2412",
-	"version": "0.1",
-	"description": "A single-file plug-in.",
-}*/
 // Twitter: @unlocked2412
 (() =>
     Object.assign(
