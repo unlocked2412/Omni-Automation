@@ -13,10 +13,6 @@ Click `Add Linked Folder...` in the recently opened dialog.
 
 ## Donations
 
-Please, consider making a donation if these scripts useful.
+Please, consider making a donation if you find these scripts useful.
 
-<form action="https://www.paypal.com/donate" method="post" target="_top">
-<input type="hidden" name="hosted_button_id" value="SG4X2UPMLD85Q" />
-<input type="image" src="https://www.paypalobjects.com/en_US/i/btn/btn_donate_LG.gif" border="0" name="submit" title="PayPal - The safer, easier way to pay online!" alt="Donate with PayPal button" />
-<img alt="" border="0" src="https://www.paypal.com/en_AR/i/scr/pixel.gif" width="1" height="1" />
-</form>
+[![Donate with PayPal](https://raw.githubusercontent.com/stefan-niedermann/paypal-donate-button/master/paypal-donate-button.png)](https://www.paypal.com/donate?hosted_button_id=SG4X2UPMLD85Q)
