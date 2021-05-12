@@ -37,13 +37,13 @@
                     )
                 };
 
+                // updateDeferDate :: Date -> OFTask -> IO OFTask
                 const updateDeferDate = dte => task => {
                     return (
                         task.deferDate = dte,
                         task
                     )
                 }
-
 
                 // FUNCTIONS --
                 // https://github.com/RobTrew/prelude-jxa
@@ -62,6 +62,27 @@
                     const dte2 = new Date(dte);
                     return (
                         dte2.setHours(h, m, s, 0),
+                        dte2
+                    );
+                };
+
+                // addHours :: Int -> Date -> Date
+                const addHours = n => dte => {
+                    const dte2 = new Date(dte);
+                    return (
+                        dte2.setHours(n + dte.getHours()),
+                        dte2
+                    );
+                };
+
+                // addWeeks :: Int -> Date -> Date
+                const addWeeks = n => addDays(7 * n);
+
+                // addMonths :: Int -> Date -> Date
+                const addMonths = n => dte => {
+                    const dte2 = new Date(dte);
+                    return (
+                        dte2.setMonth(n + dte.getMonth()),
                         dte2
                     );
                 };
@@ -212,27 +233,29 @@
                 const typeName = v => {
                     const t = typeof v;
 
-                    return "object" === t ? (
-                        Array.isArray(v) ? (
-                            "List"
-                        ) : "Date" === v.constructor.name ? (
-                            "Date"
-                        ) : null !== v ? (() => {
-                            const ct = v.type;
+                    return null !== v ? (
+                        "object" === t ? (
+                            Array.isArray(v) ? (
+                                "List"
+                            ) : "Date" === v.constructor.name ? (
+                                "Date"
+                            ) : (() => {
+                                const ct = v.type;
 
-                            return Boolean(ct) ? (
-                                (/Tuple\d+/u).test(ct) ? (
-                                    "TupleN"
-                                ) : ct
-                            ) : "Dict";
-                        })() : "Bottom"
-                    ) : {
-                        "boolean": "Bool",
-                        "date": "Date",
-                        "number": "Num",
-                        "string": "String",
-                        "function": "(a -> b)"
-                    } [t] || "Bottom";
+                                return Boolean(ct) ? (
+                                    (/Tuple\d+/u).test(ct) ? (
+                                        "TupleN"
+                                    ) : ct
+                                ) : "Dict";
+                            })()
+                        ) : {
+                            "boolean": "Bool",
+                            "date": "Date",
+                            "number": "Num",
+                            "string": "String",
+                            "function": "(a -> b)"
+                        } [t] || "Bottom"
+                    ) : "Bottom";
                 };
 
                 return main()
