@@ -29,7 +29,7 @@
         const addMonths = n => dte => {
             const dte2 = new Date(dte);
             return (
-                dte2.setMonth(n + d.getMonth()),
+                dte2.setMonth(n + dte.getMonth()),
                 dte2
             );
         };

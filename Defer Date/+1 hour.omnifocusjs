@@ -18,18 +18,18 @@
                 const
                     taskDate = task.deferDate;
                 return (
-                    task.deferDate = setHours(1)(taskDate),
+                    task.deferDate = addHours(1)(taskDate),
                     task
                 )
             })
         };
 
         // GENERICS -------------------------------------
-        // setHours :: Int -> Date -> Date
-        const setHours = n => dte => {
+        // addHours :: Int -> Date -> Date
+        const addHours = n => dte => {
             const dte2 = new Date(dte);
             return (
-                dte2.setHours(n, 0, 0),
+                dte2.setHours(n + dte.getHours()),
                 dte2
             );
         };
