@@ -2,92 +2,215 @@
 	"type": "action",
 	"author": "unlocked2412",
 	"version": "0.1",
-	"description": "A single-file OmniFocus plug-in.",
+	"description": "A single-file plug-in.",
 }*/
-(() => Object.assign(
-    new PlugIn.Action(selection => {
-
-        // OMNI JS CODE ---------------------------------------
-        const omniJSContext = () => {
-            // main :: IO ()
-            const main = () => {
-                const
-                    ts = selection
-                    .tasks
-                    .filter(task => null !== task.deferDate);
-
-                return ts.map(task => {
-                    return (
-                        task.deferDate = until(isWeekend)(
+// Twitter: @unlocked2412
+(() =>
+    Object.assign(
+        new PlugIn.Action(selection => {
+            // OMNI JS CODE ---------------------------------------
+            const omniJSContext = () => {
+                // main :: IO ()
+                const main = () => {
+                    const
+                        defaultStartTime = settings
+                        .objectForKey('DefaultStartTime'),
+                        ts = ['projects', 'tasks'].flatMap(
+                            k => Array.from(selection[k])
+                        ),
+                        nextWeekendDay = setTime(
+                            ...splitOn(":")(defaultStartTime)
+                        )(until(isWeekend)(
                             addDays(1)
-                        )(new Date()),
-                        task
-                    )
-                })
-            };
+                        )(new Date()));
 
-            // DATES -----------------------------------------------------
-            // addDays :: Int -> Date -> Date
-            const addDays = n => dte => {
-                const dte2 = new Date(dte);
-                return (
-                    dte2.setDate(n + dte.getDate()),
-                    dte2
-                );
-            };
-
-            // isWeekend :: Date -> Bool
-            const isWeekend = dte =>
-                any(
-                    eq(dte.getDay())
-                )([0, 6])
-
-            // GENERIC FUNCTIONS --------------------------------------------
-            // https://github.com/RobTrew/prelude-jxa
-            // any :: (a -> Bool) -> [a] -> Bool
-            const any = p =>
-                // True if p(x) holds for at least
-                // one item in xs.
-                xs => xs.some(p);
-
-            // eq (==) :: Eq a => a -> a -> Bool
-            const eq = a =>
-                // True when a and b are equivalent in the terms
-                // defined below for their shared data type.
-                b => {
-                    const t = typeof a;
-                    return t !== typeof b ? (
-                        false
-                    ) : 'object' !== t ? (
-                        'function' !== t ? (
-                            a === b
-                        ) : a.toString() === b.toString()
-                    ) : (() => {
-                        const kvs = Object.entries(a);
-                        return kvs.length !== Object.keys(b).length ? (
-                            false
-                        ) : kvs.every(([k, v]) => eq(v)(b[k]));
-                    })();
+                    return ts.map(task => {
+                        return (
+                            task.deferDate = nextWeekendDay,
+                            task
+                        )
+                    })
                 };
 
-            // until :: (a -> Bool) -> (a -> a) -> a -> a
-            const until = p => f => x => {
-                let v = x;
-                while (!p(v)) v = f(v);
-                return v;
+
+                // FUNCTIONS --
+                // JS Basics ---------------------------------------------------
+                // addDays :: Int -> Date -> Date
+                const addDays = n => dte => {
+                    const dte2 = new Date(dte);
+                    return (
+                        dte2.setDate(n + dte.getDate()),
+                        dte2
+                    );
+                };
+
+                // setTime :: (Int, Int, Int) -> Date -> Date
+                const setTime = (h, m, s) => dte => {
+                    const dte2 = new Date(dte);
+                    return (
+                        dte2.setHours(h, m, s, 0),
+                        dte2
+                    );
+                };
+
+                // isWeekend :: Date -> Bool
+                const isWeekend = dte =>
+                    any(
+                        eq(dte.getDay())
+                    )([0, 6])
+
+                // JS Prelude --------------------------------------------------
+                // https://github.com/RobTrew/prelude-jxa
+                // Tuple (,) :: a -> b -> (a, b)
+                const Tuple = a =>
+                    b => ({
+                        type: "Tuple",
+                        "0": a,
+                        "1": b,
+                        length: 2
+                    });
+
+                // any :: (a -> Bool) -> [a] -> Bool
+                const any = p =>
+                    // True if p(x) holds for at least
+                    // one item in xs.
+                    xs => [...xs].some(p);
+
+                // concat :: [[a]] -> [a]
+                // concat :: [String] -> String
+                const concat = xs =>
+                    0 < xs.length ? (
+                        (
+                            xs.every(x => "string" === typeof x) ? (
+                                ""
+                            ) : []
+                        ).concat(...xs)
+                    ) : xs;
+
+                // eq (==) :: Eq a => a -> a -> Bool
+                const eq = a =>
+                    // True when a and b are equivalent in the terms
+                    // defined below for their shared data type.
+                    b => {
+                        const t = typeof a;
+
+                        return t !== typeof b ? (
+                            false
+                        ) : "object" !== t ? (
+                            "function" !== t ? (
+                                a === b
+                            ) : a.toString() === b.toString()
+                        ) : (() => {
+                            const kvs = Object.entries(a);
+
+                            return kvs.length !== Object.keys(b).length ? (
+                                false
+                            ) : kvs.every(([k, v]) => eq(v)(b[k]));
+                        })();
+                    };
+
+                // findIndices :: (a -> Bool) -> [a] -> [Int]
+                // findIndices :: (String -> Bool) -> String -> [Int]
+                const findIndices = p =>
+                    xs => {
+                        const ys = [...xs];
+
+                        return ys.flatMap(
+                            (y, i) => p(y, i, ys) ? (
+                                [i]
+                            ) : []
+                        );
+                    };
+
+                // fst :: (a, b) -> a
+                const fst = tpl =>
+                    // First member of a pair.
+                    tpl[0];
+
+                // keys :: Dict -> [String]
+                const keys = Object.keys;
+
+                // length :: [a] -> Int
+                const length = xs =>
+                    // Returns Infinity over objects without finite
+                    // length. This enables zip and zipWith to choose
+                    // the shorter argument when one is non-finite,
+                    // like cycle, repeat etc
+                    "GeneratorFunction" !== xs.constructor
+                    .constructor.name ? (
+                        xs.length
+                    ) : Infinity;
+
+                // map :: (a -> b) -> [a] -> [b]
+                const map = f =>
+                    // The list obtained by applying f
+                    // to each element of xs.
+                    // (The image of xs under f).
+                    xs => [...xs].map(f);
+
+                // matching :: [a] -> (a -> Int -> [a] -> Bool)
+                const matching = pat => {
+                    // A sequence-matching function for findIndices etc
+                    // findIndices(matching([2, 3]), [1, 2, 3, 1, 2, 3])
+                    // -> [1, 4]
+                    const
+                        lng = pat.length,
+                        bln = 0 < lng,
+                        h = bln ? pat[0] : undefined;
+
+                    return x => i => src =>
+                        bln && h === x && eq(pat)(
+                            src.slice(i, lng + i)
+                        );
+                };
+
+                // snd :: (a, b) -> b
+                const snd = tpl =>
+                    // Second member of a pair.
+                    tpl[1];
+
+                // splitOn :: [a] -> [a] -> [[a]]
+                // splitOn :: String -> String -> [String]
+                const splitOn = pat => src =>
+                    // A list of the strings delimited by
+                    // instances of a given pattern in s.
+                    ("string" === typeof src) ? (
+                        src.split(pat)
+                    ) : (() => {
+                        const
+                            lng = pat.length,
+                            tpl = findIndices(matching(pat))(src).reduce(
+                                (a, i) => Tuple(
+                                    fst(a).concat([src.slice(snd(a), i)])
+                                )(lng + i),
+                                Tuple([])(0)
+                            );
+
+                        return fst(tpl).concat([src.slice(snd(tpl))]);
+                    })();
+
+                // until :: (a -> Bool) -> (a -> a) -> a -> a
+                const until = p =>
+                    // The value resulting from repeated applications
+                    // of f to the seed value x, terminating when
+                    // that result returns true for the predicate p.
+                    f => x => {
+                        let v = x;
+
+                        while (!p(v)) {
+                            v = f(v);
+                        }
+
+                        return v;
+                    };
+
+                return main()
             };
 
-            // MAIN -----------------------------------------
-            return main()
-        };
-
-        return omniJSContext()
-
-    }), {
-        validate: selection =>
-            selection
-            .tasks
-            .filter(task => null !== task.deferDate)
-            .length > 0
-    }
-))();
+            return omniJSContext()
+        }), {
+            validate: selection => ['projects', 'tasks'].flatMap(
+                k => selection[k]
+            ).length > 0
+        })
+)();
