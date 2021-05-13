@@ -15,7 +15,9 @@
                     const
                         defaultStartTime = settings
                         .objectForKey('DefaultStartTime'),
-                        ts = document.windows[0].selection.tasks,
+                        ts = ['projects', 'tasks'].flatMap(
+                            k => Array.from(selection[k])
+                        ),
                         tomorrow = addDays(1)(
                             setTime(
                                 ...splitOn(":")(defaultStartTime)
@@ -263,6 +265,8 @@
 
             return omniJSContext()
         }), {
-            validate: selection => true
+            validate: selection => ['projects', 'tasks'].flatMap(
+                k => Array.from(selection[k])
+            ).length > 0
         })
 )();
