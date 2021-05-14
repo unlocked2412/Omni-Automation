@@ -18,7 +18,7 @@
                         ts = ['projects', 'tasks'].flatMap(
                             k => Array.from(selection[k])
                         ),
-                        tomorrow = addDays(1)(
+                        today = addDays(0)(
                             setTime(
                                 ...splitOn(":")(defaultStartTime)
                             )(
@@ -26,7 +26,7 @@
                             )
                         );
 
-                    return ts.map(updateDeferDate(tomorrow))
+                    return ts.map(updateDeferDate(today))
                 };
 
                 // updateDeferDate :: Date -> OFTask -> IO OFTask
