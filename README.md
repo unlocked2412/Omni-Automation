@@ -15,7 +15,7 @@ Click `Add Linked Folder...` in the recently opened dialog.
 
 Please, consider making a donation if you find these scripts useful.
 
-[![Donate with PayPal](https://github.com/unlocked2412/OmniJS-Automation/blob/master/Misc/donate_button.png)](https://www.paypal.com/donate?hosted_button_id=SG4X2UPMLD85Q)
+[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/U7U74O49E)
 
 
   
