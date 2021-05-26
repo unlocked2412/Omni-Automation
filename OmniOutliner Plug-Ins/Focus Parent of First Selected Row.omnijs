@@ -1,0 +1,35 @@
+/*{
+	"type": "action",
+	"author": "unlocked2412",
+	"version": "0.1",
+	"description": "A single-file plug-in.",
+}*/
+// Twitter: @unlocked2412
+(() =>
+    Object.assign(
+        new PlugIn.Action(selection => {
+            // OMNI JS CODE ---------------------------------------
+            const omniJSContext = () => {
+                // main :: IO ()
+                const main = () => {
+                    const
+                        editor = document.editors[0],
+                        row = selection.items[0],
+                        p = row.parent;
+                    return rootItem === p ? (
+                        (editor.focusedItems = [], [])
+                    ) : (
+                        editor.focusedItems = [p],
+                        editor.select(editor.nodesForObjects([row])),
+                        [p]
+                    )
+                };
+
+                return main()
+            };
+
+            return omniJSContext()
+        }), {
+            validate: selection => 0 < selection.items.length
+        })
+)();
