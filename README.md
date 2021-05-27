@@ -3,7 +3,8 @@ A repository with plug-ins and scripts for OmniFocus and OmniOutliner using the 
 
 ## Installation of Plug-Ins
 
-- Download **.omnijs**, **.omnifocusjs** or **.omnioutlinerjs** file.
+- Click on the green `Code` button and then `Download ZIP`.
+- Locate the desired **.omnijs**, **.omnifocusjs** or **.omnioutlinerjs** file.
 - Place it in a linked folder.
 
 ## Adding a linked Plug-Ins folder
