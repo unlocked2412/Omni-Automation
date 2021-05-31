@@ -2,7 +2,7 @@
 	"type": "action",
 	"author": "unlocked2412",
 	"version": "0.1",
-	"description": "A single-file OmniFocus plug-in.",
+	"description": "A single-file plug-in.",
 }*/
 // Twitter: @unlocked2412
 (() =>
@@ -18,20 +18,20 @@
                         ts = ['projects', 'tasks'].flatMap(
                             k => Array.from(selection[k])
                         ),
-                        nextMonth = addMonths(1)(
+                        tomorrow = addMonths(1)(
                             setTime(
-                                ...splitOn(":")(defaultStartTime)
+                                splitOn(":")(defaultStartTime)
                             )(
                                 new Date()
                             )
                         ),
                         p = (
                             null === ts[0].deferDate ||
-                            any(x => !eq1(ts[0].deferDate)(x.deferDate))(ts)
+                            any(x => !eqDateTimeS(ts[0].deferDate)(x.deferDate))(ts)
                         );
 
                     return p ? (
-                        ts.map(updateDeferDate(nextMonth))
+                        ts.map(updateDeferDate(tomorrow))
                     ) : ts.map(task =>
                         updateDeferDate(addMonths(1)(task.deferDate))(
                             task
@@ -47,32 +47,24 @@
                     )
                 }
 
+
                 // FUNCTIONS --
                 // https://github.com/RobTrew/prelude-jxa
                 // JS Basics ---------------------------------------------------
-                // addDays :: Int -> Date -> Date
-                const addDays = n => dte => {
-                    const dte2 = new Date(dte);
-                    return (
-                        dte2.setDate(n + dte.getDate()),
-                        dte2
-                    );
-                };
-
-                // setTime :: (Int, Int, Int) -> Date -> Date
-                const setTime = (h, m, s) => dte => {
-                    const dte2 = new Date(dte);
-                    return (
-                        dte2.setHours(h, m, s, 0),
-                        dte2
-                    );
-                };
-
                 // addHours :: Int -> Date -> Date
                 const addHours = n => dte => {
                     const dte2 = new Date(dte);
                     return (
                         dte2.setHours(n + dte.getHours()),
+                        dte2
+                    );
+                };
+
+                // addDays :: Int -> Date -> Date
+                const addDays = n => dte => {
+                    const dte2 = new Date(dte);
+                    return (
+                        dte2.setDate(n + dte.getDate()),
                         dte2
                     );
                 };
@@ -89,7 +81,47 @@
                     );
                 };
 
+                // eqDateTimeS :: Int -> Date -> Date -> Bool
+                const eqDateTimeS = n =>
+                    // Equivalence of two JS Date values
+                    // at a granularity of n seconds.
+                    // e.g.
+                    //  Same second: eqDateTime(1)(a)(b)
+                    //  Same minute: eqDateTime(60)(a)(b)
+                    //    Same hour: eqDateTime(3600)(a)(b)
+                    on(a => b => a === b)(
+                        flip(div)(1E3 * n)
+                    );
+
+                // setTime :: [Int] -> Date -> Date
+                const setTime = xs => dte => {
+                    const dte2 = new Date(dte);
+                    return (
+                        dte2.setHours(0, 0, 0, 0),
+                        dte2.setHours(...xs),
+                        dte2
+                    );
+                };
+
                 // JS Prelude --------------------------------------------------
+                // Ratio :: Integral a => a -> a -> Ratio a
+                const Ratio = a => b => {
+                    const go = (x, y) =>
+                        0 !== y ? (() => {
+                            const d = gcd(x)(y);
+
+                            return {
+                                type: "Ratio",
+                                // numerator
+                                "n": Math.trunc(x / d),
+                                // denominator
+                                "d": Math.trunc(y / d)
+                            };
+                        })() : undefined;
+
+                    return go(a * signum(b), abs(b));
+                };
+
                 // Tuple (,) :: a -> b -> (a, b)
                 const Tuple = a =>
                     b => ({
@@ -99,22 +131,18 @@
                         length: 2
                     });
 
-                // add (+) :: Num a => a -> a -> a
-                const add = a =>
-                    // Curried addition.
-                    b => a + b;
-
-                // all :: (a -> Bool) -> [a] -> Bool
-                const all = p =>
-                    // True if p(x) holds for every x in xs.
-                    xs => [...xs].every(p);
+                // abs :: Num -> Num
+                const abs =
+                    // Absolute value of a given number - without the sign.
+                    x => 0 > x ? (
+                        -x
+                    ) : x;
 
                 // any :: (a -> Bool) -> [a] -> Bool
                 const any = p =>
                     // True if p(x) holds for at least
                     // one item in xs.
                     xs => [...xs].some(p);
-
 
                 // concat :: [[a]] -> [a]
                 // concat :: [String] -> String
@@ -127,21 +155,23 @@
                         ).concat(...xs)
                     ) : xs;
 
+                // div :: Int -> Int -> Int
+                const div = x =>
+                    y => Math.floor(x / y);
+
                 // eq (==) :: Eq a => a -> a -> Bool
-                const eq1 = a =>
+                const eq = a =>
                     // True when a and b are equivalent in the terms
                     // defined below for their shared data type.
                     b => {
-                        const t = typeName(a);
+                        const t = typeof a;
 
-                        return t !== typeName(b) ? (
+                        return t !== typeof b ? (
                             false
-                        ) : "Dict" !== t ? (
-                            "Date" !== t ? (
-                                "function" !== t ? (
-                                    a === b
-                                ) : a.toString() === b.toString()
-                            ) : 0 === (a - b) // Date equality
+                        ) : "object" !== t ? (
+                            "function" !== t ? (
+                                a === b
+                            ) : a.toString() === b.toString()
                         ) : (() => {
                             const kvs = Object.entries(a);
 
@@ -164,10 +194,43 @@
                         );
                     };
 
+                // flip :: (a -> b -> c) -> b -> a -> c
+                const flip = op =>
+                    // The binary function op with
+                    // its arguments reversed.
+                    1 < op.length ? (
+                        (a, b) => op(b, a)
+                    ) : (x => y => op(y)(x));
+
+                // floor :: Num -> Int
+                const floor = x => {
+                    const
+                        nr = (
+                            "Ratio" !== x.type ? (
+                                properFraction
+                            ) : properFracRatio
+                        )(x),
+                        n = nr[0];
+
+                    return 0 > nr[1] ? n - 1 : n;
+                };
+
                 // fst :: (a, b) -> a
                 const fst = tpl =>
                     // First member of a pair.
                     tpl[0];
+
+                // gcd :: Integral a => a -> a -> a
+                const gcd = x =>
+                    y => {
+                        const zero = x.constructor(0);
+                        const go = (a, b) =>
+                            zero === b ? (
+                                a
+                            ) : go(b, a % b);
+
+                        return go(abs(x), abs(y));
+                    };
 
                 // keys :: Dict -> [String]
                 const keys = Object.keys;
@@ -206,6 +269,45 @@
                         );
                 };
 
+                // on :: (b -> b -> c) -> (a -> b) -> a -> a -> c
+                const on = f =>
+                    // e.g. groupBy(on(eq)(length))
+                    g => a => b => f(g(a))(g(b));
+
+                // properFracRatio :: Ratio -> (Int, Ratio)
+                const properFracRatio = nd => {
+                    const [q, r] = Array.from(quotRem(nd.n, nd.d));
+
+                    return Tuple(q, ratio(r, nd.d));
+                };
+
+                // properFraction :: Real -> (Int, Real)
+                const properFraction = n => {
+                    const i = Math.floor(n) + (n < 0 ? 1 : 0);
+
+                    return Tuple(i)(n - i);
+                };
+
+                // quotRem :: Integral a => a -> a -> (a, a)
+                const quotRem = m =>
+                    // The quotient, tupled with the remainder.
+                    n => Tuple(
+                        Math.trunc(m / n)
+                    )(
+                        m % n
+                    );
+
+                // signum :: Num -> Num
+                const signum = n =>
+                    // | Sign of a number.
+                    n.constructor(
+                        0 > n ? (
+                            -1
+                        ) : (
+                            0 < n ? 1 : 0
+                        )
+                    );
+
                 // snd :: (a, b) -> b
                 const snd = tpl =>
                     // Second member of a pair.
@@ -230,35 +332,6 @@
 
                         return fst(tpl).concat([src.slice(snd(tpl))]);
                     })();
-
-                // typeName :: a -> String
-                const typeName = v => {
-                    const t = typeof v;
-
-                    return null !== v ? (
-                        "object" === t ? (
-                            Array.isArray(v) ? (
-                                "List"
-                            ) : "Date" === v.constructor.name ? (
-                                "Date"
-                            ) : (() => {
-                                const ct = v.type;
-
-                                return Boolean(ct) ? (
-                                    (/Tuple\d+/u).test(ct) ? (
-                                        "TupleN"
-                                    ) : ct
-                                ) : "Dict";
-                            })()
-                        ) : {
-                            "boolean": "Bool",
-                            "date": "Date",
-                            "number": "Num",
-                            "string": "String",
-                            "function": "(a -> b)"
-                        } [t] || "Bottom"
-                    ) : "Bottom";
-                };
 
                 return main()
             };
