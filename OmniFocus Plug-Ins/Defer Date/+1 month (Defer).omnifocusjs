@@ -338,8 +338,8 @@
 
             return omniJSContext()
         }), {
-            validate: selection => ['projects', 'tasks'].flatMap(
-                k => Array.from(selection[k])
-            ).length > 0
+            validate: selection => ["tasks", "projects"].some(
+                k => selection[k].length > 0
+            )
         })
 )();
