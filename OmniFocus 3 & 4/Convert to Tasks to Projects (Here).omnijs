@@ -13,14 +13,16 @@
                 // main :: IO ()
                 const main = () => {
                     const
-                        location = selection
+                        proj = selection
                         .tasks[0]
-                        .containingProject
-                        .parentFolder;
+                        .containingProject,
+                        location = proj.parentFolder;
 
                     return convertTasksToProjects(
                         selection.tasks,
-                        location.beginning
+                        null === location ? (
+                            proj.after
+                        ) : location.beginning
                     )
                 };
 
