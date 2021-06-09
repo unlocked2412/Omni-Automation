@@ -1,5 +1,5 @@
-# OmniJS-Automation
-A repository with plug-ins and scripts for OmniFocus and OmniOutliner using the new OmniJS scripting API.
+# Omni-Automation
+A repository with plug-ins and scripts for OmniFocus and OmniOutliner using the new Omni Automation scripting API.
 
 ## Installation of Plug-Ins
 
