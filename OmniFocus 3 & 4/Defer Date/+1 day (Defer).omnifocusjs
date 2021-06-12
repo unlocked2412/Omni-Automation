@@ -15,7 +15,7 @@
                     const
                         defaultStartTime = settings
                         .objectForKey('DefaultStartTime'),
-                        ts = ['projects', 'tasks'].flatMap(
+                        ts = ["projects", "tasks"].flatMap(
                             k => Array.from(selection[k])
                         ),
                         tomorrow = addDays(1)(
