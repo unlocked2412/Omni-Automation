@@ -45,7 +45,7 @@
                         task.deferDate = dte,
                         task
                     )
-                }
+                };
 
 
                 // FUNCTIONS --
