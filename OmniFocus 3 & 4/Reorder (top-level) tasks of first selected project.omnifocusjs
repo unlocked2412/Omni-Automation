@@ -5,6 +5,9 @@
 	"description": "A single-file plug-in.",
 }*/
 // Twitter: @unlocked2412
+// The following Plug-In reorder tasks of 
+// first selected project by due dates 
+// (tasks without due date are moved to the bottom).
 (() =>
     Object.assign(
         new PlugIn.Action(selection => {
@@ -29,7 +32,6 @@
                         }"`
                     )
                 };
-
 
                 // FUNCTIONS --
                 // https://github.com/RobTrew/prelude-jxa
