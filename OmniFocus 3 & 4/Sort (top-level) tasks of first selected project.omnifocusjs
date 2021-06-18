@@ -1,0 +1,173 @@
+/*{
+	"type": "action",
+	"author": "unlocked2412",
+	"version": "0.1",
+	"description": "A single-file plug-in.",
+}*/
+// Twitter: @unlocked2412
+(() =>
+    Object.assign(
+        new PlugIn.Action(selection => {
+            // OMNI JS CODE ---------------------------------------
+            const omniJSContext = () => {
+                // main :: IO ()
+                const main = () => {
+                    const
+                        proj = selection.projects[0],
+                        ts = proj.children,
+                        sorted = compose(
+                            uncurry(append),
+                            swap,
+                            partition(x => null === x.dueDate),
+                            sortOn(x => x.dueDate)
+                        )(ts);
+
+                    return (
+                        moveTasks(sorted, proj),
+                        `Moved ${sorted.length} tasks within Project: "${
+                            proj.name
+                        }"`
+                    )
+                };
+
+
+                // FUNCTIONS --
+                // https://github.com/RobTrew/prelude-jxa
+                // JS Prelude --------------------------------------------------
+                // Tuple (,) :: a -> b -> (a, b)
+                const Tuple = a =>
+                    b => ({
+                        type: "Tuple",
+                        "0": a,
+                        "1": b,
+                        length: 2
+                    });
+
+                // append (<>) :: [a] -> [a] -> [a]
+                const append = xs =>
+                    // Two lists joined into one.
+                    ys => xs.concat(ys);
+
+                // comparing :: (a -> b) -> (a -> a -> Ordering)
+                const comparing = f =>
+                    x => y => {
+                        const
+                            a = f(x),
+                            b = f(y);
+
+                        return a < b ? -1 : (a > b ? 1 : 0);
+                    };
+
+                // compose (<<<) :: (b -> c) -> (a -> b) -> a -> c
+                const compose = (...fs) =>
+                    // A function defined by the right-to-left
+                    // composition of all the functions in fs.
+                    fs.reduce(
+                        (f, g) => x => f(g(x)),
+                        x => x
+                    );
+
+                // concat :: [[a]] -> [a]
+                // concat :: [String] -> String
+                const concat = xs =>
+                    0 < xs.length ? (
+                        (
+                            xs.every(x => "string" === typeof x) ? (
+                                ""
+                            ) : []
+                        ).concat(...xs)
+                    ) : xs;
+
+                // fst :: (a, b) -> a
+                const fst = tpl =>
+                    // First member of a pair.
+                    tpl[0];
+
+                // length :: [a] -> Int
+                const length = xs =>
+                    // Returns Infinity over objects without finite
+                    // length. This enables zip and zipWith to choose
+                    // the shorter argument when one is non-finite,
+                    // like cycle, repeat etc
+                    "GeneratorFunction" !== xs.constructor
+                    .constructor.name ? (
+                        xs.length
+                    ) : Infinity;
+
+                // list :: StringOrArrayLike b => b -> [a]
+                const list = xs =>
+                    // xs itself, if it is an Array,
+                    // or an Array derived from xs.
+                    Array.isArray(xs) ? (
+                        xs
+                    ) : Array.from(xs || []);
+
+                // map :: (a -> b) -> [a] -> [b]
+                const map = f =>
+                    // The list obtained by applying f
+                    // to each element of xs.
+                    // (The image of xs under f).
+                    xs => [...xs].map(f);
+
+                // partition :: (a -> Bool) -> [a] -> ([a], [a])
+                const partition = p =>
+                    // A tuple of two lists - those elements in
+                    // xs which match p, and those which do not.
+                    xs => list(xs).reduce(
+                        (a, x) => p(x) ? (
+                            Tuple(a[0].concat(x))(a[1])
+                        ) : Tuple(a[0])(a[1].concat(x)),
+                        Tuple([])([])
+                    );
+
+                // snd :: (a, b) -> b
+                const snd = tpl =>
+                    // Second member of a pair.
+                    tpl[1];
+
+                // sort :: Ord a => [a] -> [a]
+                const sort = xs =>
+                    // An A-Z sorted copy of xs.
+                    list(xs).slice()
+                    .sort((a, b) => a < b ? -1 : (a > b ? 1 : 0));
+
+                // sortOn :: Ord b => (a -> b) -> [a] -> [a]
+                const sortOn = f =>
+                    // Equivalent to sortBy(comparing(f)), but with f(x)
+                    // evaluated only once for each x in xs.
+                    // ('Schwartzian' decorate-sort-undecorate).
+                    xs => xs.map(
+                        x => Tuple(f(x))(x)
+                    )
+                    .sort(uncurry(comparing(fst)))
+                    .map(snd);
+
+                // swap :: (a, b) -> (b, a)
+                const swap = ab =>
+                    // The pair ab with its order reversed.
+                    Tuple(ab[1])(
+                        ab[0]
+                    );
+
+                // uncurry :: (a -> b -> c) -> ((a, b) -> c)
+                const uncurry = f =>
+                    // A function over a pair, derived
+                    // from a curried function.
+                    (...args) => {
+                        const
+                            xy = Boolean(args.length % 2) ? (
+                                args[0]
+                            ) : args;
+
+                        return f(xy[0])(xy[1]);
+                    };
+
+                return main()
+            };
+
+            return omniJSContext()
+        }), {
+            validate: selection => 
+                1 === selection.projects.length
+        })
+)();
