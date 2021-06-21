@@ -5,9 +5,6 @@
 	"description": "A single-file plug-in.",
 }*/
 // Twitter: @unlocked2412
-// The following Plug-In reorder tasks of 
-// first selected project by due dates 
-// (tasks without due date are moved to the bottom).
 (() =>
     Object.assign(
         new PlugIn.Action(selection => {
@@ -16,25 +13,24 @@
                 // main :: IO ()
                 const main = () => {
                     const
-                        a = new Date(),
-                        proj = selection.projects[0],
-                        ts = proj.children,
+                        parent = document.editors[0].selection.items[0],
+                        rows = parent.descendants,
+                        col = columns.byTitle("Date"),
                         sorted = compose(
                             uncurry(append),
                             swap,
-                            partition(x => null === x.dueDate),
-                            sortOn(x => x.dueDate)
-                        )(ts);
+                            second(sortOn(x => x.valueForColumn(col))),
+                            partition(x => null === x.valueForColumn(col))
+                        )(rows);
 
                     return (
-                        sorted,
-                        console.log(`${(new Date() - a)}`),
-                        // moveTasks(sorted, proj),
-                        `Moved ${sorted.length} tasks within Project: "${
-                            proj.name
-                        }"`
+                        moveItems(sorted, parent.beginning),
+                        `Moved ${sorted.length} rows within Parent: "${
+                    parent.topic
+                }"`
                     )
                 };
+
 
                 // FUNCTIONS --
                 // https://github.com/RobTrew/prelude-jxa
@@ -125,6 +121,19 @@
                         Tuple([])([])
                     );
 
+                // second :: (a -> b) -> ((c, a) -> (c, b))
+                const second = f =>
+                    // A function over a simple value lifted
+                    // to a function over a tuple.
+                    // f (a, b) -> (a, f(b))
+                    xy => {
+                        const tpl = Tuple(xy[0])(f(xy[1]));
+
+                        return Array.isArray(xy) ? (
+                            Array.from(tpl)
+                        ) : tpl;
+                    };
+
                 // snd :: (a, b) -> b
                 const snd = tpl =>
                     // Second member of a pair.
@@ -172,7 +181,6 @@
 
             return omniJSContext()
         }), {
-            validate: selection => 
-                1 === selection.projects.length
+            validate: selection => true
         })
 )();
