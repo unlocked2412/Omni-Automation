@@ -1,0 +1,653 @@
+/*{
+	"type": "action",
+	"author": "unlocked2412",
+	"version": "0.1",
+	"description": "A single-file plug-in.",
+}*/
+// Twitter: @unlocked2412
+(() =>
+    Object.assign(
+        new PlugIn.Action(selection => {
+            // OMNI JS CODE ---------------------------------------
+            const omniJSContext = () => {
+                // main :: IO ()
+                const main = () => {
+                    const
+                        parent = document.editors[0].selection.items[0],
+                        cols = columns.filter(
+                            col => Column.Type.Date === col.type
+                        ),
+                        fields = [
+                            new Form.Field.Option(
+                                "optColumn",
+                                "Date Column",
+                                cols,
+                                cols.map(x => x.title),
+                                cols[0]
+                            ),
+                            new Form.Field.Option(
+                                "optSortOrder",
+                                "Sort Order",
+                                [true, false],
+                                ["Ascending", "Descending"],
+                                true
+                            )
+                        ],
+                        dialog = {
+                            "values": {
+                                "optColumn": cols[0],
+                                "optSortOrder": true
+                            }
+                        };
+
+                    return (
+                        userDialog(fields)("Sort By Date Column")(
+                            dialog => movedItems(
+                                dialog.values["optSortOrder"]
+                            )(
+                                x => x.valueForColumn(
+                                    dialog.values["optColumn"]
+                                )
+                            )(parent.children)
+                        )
+                    )
+                };
+
+                // movedItems :: Bool -> (a -> b) -> [OOItem] -> IO String
+                const movedItems = blnAsc => f => rows => {
+                    const
+                        parent = rows[0].parent,
+                        sorted = customSort(blnAsc)(f)(
+                            rows
+                        );
+                    return (
+                        moveItems(sorted, parent.beginning),
+                        `Moved ${sorted.length} rows within Parent: "${
+                            parent.topic
+                        }"`
+                    )
+                };
+
+                // customSort :: Bool -> (a -> b) -> [OOItem]
+                const customSort = blnAsc => f => xs => {
+                    // null Date objects are always 
+                    // moved to the bottom.
+                    const
+                        cmp = (
+                            blnAsc ? (
+                                identity
+                            ) : flip
+                        )(comparing(f));
+
+                    return compose(
+                        uncurry(append),
+                        swap,
+                        second(sortBy(cmp)),
+                        partition(x => null === f(x))
+                    )(xs);
+                };
+
+
+                // FUNCTIONS --
+                // https://github.com/RobTrew/prelude-jxa
+                // JS Prelude --------------------------------------------------
+                // Just :: a -> Maybe a
+                const Just = x => ({
+                    type: "Maybe",
+                    Nothing: false,
+                    Just: x
+                });
+
+                // Left :: a -> Either a b
+                const Left = x => ({
+                    type: "Either",
+                    Left: x
+                });
+
+                // Node :: a -> [Tree a] -> Tree a
+                const Node = v =>
+                    // Constructor for a Tree node which connects a
+                    // value of some kind to a list of zero or
+                    // more child trees.
+                    xs => ({
+                        type: "Node",
+                        root: v,
+                        nest: xs || []
+                    });
+
+                // Nothing :: Maybe a
+                const Nothing = () => ({
+                    type: "Maybe",
+                    Nothing: true
+                });
+
+                // Ratio :: Integral a => a -> a -> Ratio a
+                const Ratio = a => b => {
+                    const go = (x, y) =>
+                        0 !== y ? (() => {
+                            const d = gcd(x)(y);
+
+                            return {
+                                type: "Ratio",
+                                // numerator
+                                "n": Math.trunc(x / d),
+                                // denominator
+                                "d": Math.trunc(y / d)
+                            };
+                        })() : undefined;
+
+                    return go(a * signum(b), abs(b));
+                };
+
+                // Right :: b -> Either a b
+                const Right = x => ({
+                    type: "Either",
+                    Right: x
+                });
+
+                // Tuple (,) :: a -> b -> (a, b)
+                const Tuple = a =>
+                    b => ({
+                        type: "Tuple",
+                        "0": a,
+                        "1": b,
+                        length: 2
+                    });
+
+                // TupleN :: a -> b ...  -> (a, b ... )
+                const TupleN = (...args) => {
+                    // A Tuple of an arbitrary number of items.
+                    const n = args.length;
+
+                    return 2 < n ? Object.assign(
+                        args.reduce((a, x, i) => Object.assign(a, {
+                            [i]: x
+                        }), {
+                            type: `Tuple${n}`,
+                            length: n
+                        })
+                    ) : args.reduce((f, x) => f(x), Tuple);
+                };
+
+                // abs :: Num -> Num
+                const abs =
+                    // Absolute value of a given number - without the sign.
+                    x => 0 > x ? (
+                        -x
+                    ) : x;
+
+                // append (<>) :: [a] -> [a] -> [a]
+                const append = xs =>
+                    // Two lists joined into one.
+                    ys => xs.concat(ys);
+
+                // bind (>>=) :: Monad m => m a -> (a -> m b) -> m b
+                const bind = m =>
+                    // Two computations sequentially composed,
+                    // with any value produced by the first
+                    // passed as an argument to the second.
+                    mf => Array.isArray(m) ? (
+                        bindList(m)(mf)
+                    ) : (
+                        ({
+                            "Either": () => bindLR,
+                            "Maybe": () => bindMay,
+                            "Tuple": () => bindTuple,
+                            "function": () => bindFn
+                        })[m.type || typeof m]()(m)(mf)
+                    );
+
+                // bindFn (>>=) :: (a -> b) -> (b -> a -> c) -> a -> c
+                const bindFn = f =>
+                    // Binary operator applied over f x and x.
+                    op => x => op(f(x))(x);
+
+                // bindLR (>>=) :: Either a ->
+                // (a -> Either b) -> Either b
+                const bindLR = m =>
+                    mf => m.Left ? (
+                        m
+                    ) : mf(m.Right);
+
+                // bindList (>>=) :: [a] -> (a -> [b]) -> [b]
+                const bindList = xs =>
+                    mf => [...xs].flatMap(mf);
+
+                // bindMay (>>=) :: Maybe a -> (a -> Maybe b) -> Maybe b
+                const bindMay = mb =>
+                    // Nothing if mb is Nothing, or the application of the
+                    // (a -> Maybe b) function mf to the contents of mb.
+                    mf => mb.Nothing ? (
+                        mb
+                    ) : mf(mb.Just);
+
+                // bindTuple (>>=) :: Monoid a => (a, a) -> (a -> (a, b)) -> (a, b)
+                const bindTuple = tpl =>
+                    f => {
+                        const t2 = f(tpl[1]);
+
+                        return Tuple(
+                            mappend(tpl[0])(t2[0])
+                        )(
+                            t2[1]
+                        );
+                    };
+
+                // bool :: a -> a -> Bool -> a
+                const bool = f =>
+                    t => p => p ? t : f;
+
+                // comparing :: (a -> b) -> (a -> a -> Ordering)
+                const comparing = f =>
+                    x => y => {
+                        const
+                            a = f(x),
+                            b = f(y);
+
+                        return a < b ? -1 : (a > b ? 1 : 0);
+                    };
+
+                // compose (<<<) :: (b -> c) -> (a -> b) -> a -> c
+                const compose = (...fs) =>
+                    // A function defined by the right-to-left
+                    // composition of all the functions in fs.
+                    fs.reduce(
+                        (f, g) => x => f(g(x)),
+                        x => x
+                    );
+
+                // concat :: [[a]] -> [a]
+                // concat :: [String] -> String
+                const concat = xs =>
+                    0 < xs.length ? (
+                        (
+                            xs.every(x => "string" === typeof x) ? (
+                                ""
+                            ) : []
+                        ).concat(...xs)
+                    ) : xs;
+
+                // enumFromTo :: Int -> Int -> [Int]
+                const enumFromTo = m =>
+                    n => Array.from({
+                        length: 1 + n - m
+                    }, (_, i) => m + i);
+
+                // filter :: (a -> Bool) -> [a] -> [a]
+                const filter = p =>
+                    // The elements of xs which match
+                    // the predicate p.
+                    xs => [...xs].filter(p);
+
+                // flip :: (a -> b -> c) -> b -> a -> c
+                const flip = op =>
+                    // The binary function op with
+                    // its arguments reversed.
+                    1 < op.length ? (
+                        (a, b) => op(b, a)
+                    ) : (x => y => op(y)(x));
+
+                // gcd :: Integral a => a -> a -> a
+                const gcd = x =>
+                    y => {
+                        const zero = x.constructor(0);
+                        const go = (a, b) =>
+                            zero === b ? (
+                                a
+                            ) : go(b, a % b);
+
+                        return go(abs(x), abs(y));
+                    };
+
+                // identity :: a -> a
+                const identity = x =>
+                    // The identity function.
+                    x;
+
+                // join :: Monad m => m (m a) -> m a
+                const join = x =>
+                    bind(x)(identity);
+
+                // length :: [a] -> Int
+                const length = xs =>
+                    // Returns Infinity over objects without finite
+                    // length. This enables zip and zipWith to choose
+                    // the shorter argument when one is non-finite,
+                    // like cycle, repeat etc
+                    "GeneratorFunction" !== xs.constructor
+                    .constructor.name ? (
+                        xs.length
+                    ) : Infinity;
+
+                // list :: StringOrArrayLike b => b -> [a]
+                const list = xs =>
+                    // xs itself, if it is an Array,
+                    // or an Array derived from xs.
+                    Array.isArray(xs) ? (
+                        xs
+                    ) : Array.from(xs || []);
+
+                // map :: (a -> b) -> [a] -> [b]
+                const map = f =>
+                    // The list obtained by applying f
+                    // to each element of xs.
+                    // (The image of xs under f).
+                    xs => [...xs].map(f);
+
+                // mappend (<>) :: Monoid a => a -> a -> a
+                const mappend = a =>
+                    // Associative operation
+                    // defined for various monoids.
+                    ({
+                        "(a -> b)": () => mappendFn,
+                        "List": () => append,
+                        "Maybe": () => mappendMaybe,
+                        "Num": () => mappendOrd,
+                        "String": () => append,
+                        "Tuple": () => mappendTupleN,
+                        "TupleN": () => mappendTupleN
+                    })[typeName(a)]()(a);
+
+                // mappendFn (<>) :: Monoid b => (a -> b) -> (a -> b) -> (a -> b)
+                const mappendFn = f =>
+                    g => x => mappend(f(x))(
+                        g(x)
+                    );
+
+                // mappendMaybe (<>) :: Maybe a -> Maybe a -> Maybe a
+                const mappendMaybe = a =>
+                    b => a.Nothing ? (
+                        b
+                    ) : b.Nothing ? (
+                        a
+                    ) : Just(
+                        mappend(a.Just)(
+                            b.Just
+                        )
+                    );
+
+                // mappendOrd (<>) :: Ordering -> Ordering -> Ordering
+                const mappendOrd = x =>
+                    y => 0 !== x ? (
+                        x
+                    ) : y;
+
+                // mappendTupleN (<>) ::
+                // (a, b, ...) -> (a, b, ...) -> (a, b, ...)
+                const mappendTupleN = t => t1 => {
+                    const lng = t.length;
+
+                    return lng === t1.length ? (
+                        TupleN(
+                            ...Array.from(t)
+                            .map((x, i) => mappend(x)(t1[i]))
+                        )
+                    ) : undefined;
+                };
+
+                // nest :: Tree a -> [a]
+                const nest = tree => {
+                    // Allowing for lazy (on-demand) evaluation.
+                    // If the nest turns out to be a function –
+                    // rather than a list – that function is applied
+                    // here to the root, and returns a list.
+                    const xs = tree.nest;
+
+                    return "function" !== typeof xs ? (
+                        xs
+                    ) : xs(root(tree));
+                };
+
+                // partition :: (a -> Bool) -> [a] -> ([a], [a])
+                const partition = p =>
+                    // A tuple of two lists - those elements in
+                    // xs which match p, and those which do not.
+                    xs => list(xs).reduce(
+                        (a, x) => p(x) ? (
+                            Tuple(a[0].concat(x))(a[1])
+                        ) : Tuple(a[0])(a[1].concat(x)),
+                        Tuple([])([])
+                    );
+
+                // replace :: String -> String -> String -> String
+                // replace :: Regex -> String -> String -> String
+                const replace = needle =>
+                    strNew => strHaystack => strHaystack.replace(
+                        "string" !== typeof needle ? (
+                            needle
+                        ) : new RegExp(needle, "gu"),
+                        strNew
+                    );
+
+                // root :: Tree a -> a
+                const root = tree =>
+                    // The value attached to a tree node.
+                    tree.root;
+
+                // second :: (a -> b) -> ((c, a) -> (c, b))
+                const second = f =>
+                    // A function over a simple value lifted
+                    // to a function over a tuple.
+                    // f (a, b) -> (a, f(b))
+                    xy => {
+                        const tpl = Tuple(xy[0])(f(xy[1]));
+
+                        return Array.isArray(xy) ? (
+                            Array.from(tpl)
+                        ) : tpl;
+                    };
+
+                // show :: a -> String
+                // show :: a -> Int -> Indented String
+                const show = x => {
+                    const
+                        instances = {
+                            "(a -> b)": () => showFn,
+                            "Bool": () => str,
+                            "Bottom": () => showUndefined,
+                            "Date": () => a => a,
+                            "Dict": () => a => a,
+                            "Either": () => showLR,
+                            "List": () => showList,
+                            "Maybe": () => showMaybe,
+                            "Node": () => a => a,
+                            "Num": () => str,
+                            "Ratio": () => showRatio,
+                            "String": () => str,
+                            "Tuple": () => showTuple
+                        },
+                        str = y => y.toString(),
+                        t = typeName(x);
+
+                    const instance = instances[
+                        (/^Tuple/u).test(t) ? (
+                            "Tuple"
+                        ) : t
+                    ];
+
+                    return Boolean(instance) ? (
+                        JSON.stringify(
+                            x,
+                            (_, v) => instance()(v)
+                        )
+                    ) : `No Show instance has been defined for ${t}.`;
+                };
+
+                // showFn :: (a -> b) -> String
+                const showFn = f =>
+                    `λ${f}`;
+
+                // showLR :: Either a b -> String
+                const showLR = lr => {
+                    const k = undefined !== lr.Left ? (
+                        "Left"
+                    ) : "Right";
+
+                    return `${k}(${unQuoted(show(lr[k]))})`;
+                };
+
+                // showList :: [a] -> String
+                const showList = xs => {
+                    const
+                        s = xs.map(show)
+                        .join(", ")
+                        .replace(/[\\"]/gu, "");
+
+                    return `[${s}]`;
+                };
+
+                // showMaybe :: Maybe a -> String
+                const showMaybe = mb =>
+                    mb.Nothing ? (
+                        "Nothing"
+                    ) : `Just(${unQuoted(show(mb.Just))})`;
+
+                // showRatio :: Ratio -> String
+                const showRatio = r =>
+                    "Ratio" !== r.type ? (
+                        r.toString()
+                    ) : r.n.toString() + (
+                        1 !== r.d ? (
+                            `/${r.d}`
+                        ) : ""
+                    );
+
+                // showTuple :: Tuple -> String
+                const showTuple = tpl => {
+                    const
+                        s = enumFromTo(0)(tpl.length - 1)
+                        .map(x => unQuoted(show(tpl[x])))
+                        .join(",");
+
+                    return `(${s})`;
+                };
+
+                // showUndefined :: () -> String
+                const showUndefined = () =>
+                    "(⊥)";
+
+                // signum :: Num -> Num
+                const signum = n =>
+                    // | Sign of a number.
+                    n.constructor(
+                        0 > n ? (
+                            -1
+                        ) : (
+                            0 < n ? 1 : 0
+                        )
+                    );
+
+                // sort :: Ord a => [a] -> [a]
+                const sort = xs =>
+                    // An A-Z sorted copy of xs.
+                    list(xs).slice()
+                    .sort((a, b) => a < b ? -1 : (a > b ? 1 : 0));
+
+                // sortBy :: (a -> a -> Ordering) -> [a] -> [a]
+                const sortBy = f =>
+                    xs => list(xs).slice()
+                    .sort((a, b) => f(a)(b));
+
+                // str :: a -> String
+                const str = x =>
+                    Array.isArray(x) && x.every(
+                        v => ("string" === typeof v) && (1 === v.length)
+                    ) ? (
+                        // [Char] -> String
+                        x.join("")
+                    ) : null === x ? (
+                        "null"
+                    ) : x.toString();
+
+                // swap :: (a, b) -> (b, a)
+                const swap = ab =>
+                    // The pair ab with its order reversed.
+                    Tuple(ab[1])(
+                        ab[0]
+                    );
+
+                // typeName :: a -> String
+                const typeName = v => {
+                    const t = typeof v;
+
+                    return "object" === t ? (
+                        null !== v ? (
+                            Array.isArray(v) ? (
+                                "List"
+                            ) : "Date" === v.constructor.name ? (
+                                "Date"
+                            ) : null !== v ? (() => {
+                                const ct = v.type;
+
+                                return Boolean(ct) ? (
+                                    (/Tuple\d+/u).test(ct) ? (
+                                        "TupleN"
+                                    ) : ct
+                                ) : "Dict";
+                            })() : "Bottom"
+                        ) : "Bottom"
+                    ) : {
+                        "boolean": "Bool",
+                        "date": "Date",
+                        "number": "Num",
+                        "string": "String",
+                        "function": "(a -> b)"
+                    } [t] || "Bottom";
+                };
+
+                // unQuoted :: String -> String
+                const unQuoted = s =>
+                    1 < s.length ? (
+                        q => s.slice(
+                            q !== s[0] ? 0 : 1,
+                            q !== s.slice(-1) ? undefined : -1
+                        )
+                    )(
+                        String.fromCodePoint(34)
+                    ) : s;
+
+                // uncurry :: (a -> b -> c) -> ((a, b) -> c)
+                const uncurry = f =>
+                    // A function over a pair, derived
+                    // from a curried function.
+                    (...args) => {
+                        const
+                            xy = Boolean(args.length % 2) ? (
+                                args[0]
+                            ) : args;
+
+                        return f(xy[0])(xy[1]);
+                    };
+
+                // OmniJS ------------------------------------------------------
+                // © Rob Trew
+                // userDialog :: [Form.Field] ->
+                // String -> (values -> ()) -> Promise
+                const userDialog = fields =>
+                    // General constructor for omniJS dialogs,
+                    // where f is a continuation function 
+                    // in which a dialog result
+                    // is bound to the function argument.
+                    // Accesing values with the following
+                    // incantation:
+                    // dialog => dialog.values
+                    prompt => f => fields.reduce(
+                        (form, field) => (
+                            form.addField(field),
+                            form
+                        ),
+
+                        // Seed value - a new blank form.
+                        new Form()
+                    )
+                    .show(prompt, 'OK')
+                    .then(f);
+
+                return main()
+            };
+
+            return omniJSContext()
+        }), {
+            validate: selection => true
+        })
+)();
