@@ -9,10 +9,9 @@ A repository with plug-ins and scripts for OmniFocus and OmniOutliner using the 
 
 ## Donations
 
-Please, consider making a donation if you find these scripts useful.
-
 [![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/U7U74O49E)
 
+Please, consider making a donation if you find these scripts useful.
 
 ### Notes: 
 
