@@ -1,0 +1,13 @@
+{
+    "author": "unlocked2412",
+    "identifier": "com.unlocked2412.conditionalFormatting",
+    "version": "0.1",
+    "description": "Conditional Formatting in OO",
+    "handlers": [
+        {
+            "image": "icon.png",
+            "identifier": "redHighlighting"
+        }
+    ],
+    "defaultLocale": "en"
+}
