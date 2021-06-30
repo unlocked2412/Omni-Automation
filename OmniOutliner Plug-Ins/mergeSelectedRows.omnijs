@@ -37,7 +37,7 @@
 
 
                 // FUNCTIONS --
-                // https://github.com/RobTrew/prelude-jxa
+                // https://github.com/RobTrew/prelude-jxa 
                 // JS Prelude --------------------------------------------------
                 // Just :: a -> Maybe a
                 const Just = x => ({
