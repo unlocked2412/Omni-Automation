@@ -554,6 +554,6 @@
 
             return omniJSContext()
         }), {
-            validate: selection => true
+            validate: selection => 0 < selection.tasks.length
         })
 )();
