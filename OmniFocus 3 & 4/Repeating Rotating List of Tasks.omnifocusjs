@@ -13,7 +13,11 @@
                 // main :: IO ()
                 const main = dialog => {
                     // const n = 7;
-                    const n = dialog.values['num']
+                    const n = unDigits(
+                        map(digitToInt)(
+                            dialog.values['num']
+                        )
+                    )
 
                     const
                         seln = document.windows[0].selection.tasks,
@@ -31,59 +35,6 @@
                 } tasks at parent ${parent.name}`
                     )
                 };
-
-                // isDigit :: Char -> Bool
-                const isDigit = c => {
-                    const n = c.codePointAt(0);
-
-                    return 48 <= n && 57 >= n;
-                };
-
-                // userDialogWithValidation :: [Form.Field] ->
-                // String -> (values -> Bool) -> 
-                // (values -> ()) -> Promise
-                const userDialogWithValidation = fields =>
-                    // General constructor for omniJS dialogs,
-                    // where f is a continuation function 
-                    // in which a dialog result
-                    // is bound to the function argument.
-                    // Accesing values with the following
-                    // incantation:
-                    // dialog => dialog.values
-                    prompt => t => f => {
-                        const
-                            form = fields.reduce(
-                                (form, field) => (
-                                    form.addField(field),
-                                    form
-                                ),
-
-                                // Seed value - a new blank form.
-                                new Form()
-                            ),
-                            promise = form.show(prompt, 'OK');
-                        return (
-                            // .validate is not a method
-                            form.validate = t,
-                            promise.then(f)
-                        )
-                    };
-
-                // MAIN -----------------------------------------
-                return userDialogWithValidation([
-                    new Form.Field.String(
-                        'num',
-                        'Enter cycle length',
-                        "5"
-                    )
-                ])('Repeating Rotating List')(
-                    dialog => (() => {
-                        const v = dialog.values['num']
-                        return undefined !== v ? (
-                            [...v].every(isDigit)
-                        ) : false
-                    })()
-                )(main)
 
 
                 // FUNCTIONS --
@@ -256,6 +207,30 @@
                     }
                 };
 
+                // digitToInt :: Char -> Int
+                const digitToInt = c => {
+                    const
+                        ord = x => x.codePointAt(0),
+                        oc = ord(c);
+
+                    return 48 > oc || 102 < oc ? (
+                        null
+                    ) : (() => {
+                        const
+                            dec = oc - ord("0"),
+                            hexu = oc - ord("A"),
+                            hexl = oc - ord("a");
+
+                        return 9 >= dec ? (
+                            dec
+                        ) : 0 <= hexu && 5 >= hexu ? (
+                            10 + hexu
+                        ) : 0 <= hexl && 5 >= hexl ? (
+                            10 + hexl
+                        ) : null;
+                    })();
+                };
+
                 // enumFromTo :: Int -> Int -> [Int]
                 const enumFromTo = m =>
                     n => Array.from({
@@ -279,7 +254,12 @@
                     // The identity function.
                     x;
 
+                // isDigit :: Char -> Bool
+                const isDigit = c => {
+                    const n = c.codePointAt(0);
 
+                    return 48 <= n && 57 >= n;
+                };
 
                 // join :: Monad m => m (m a) -> m a
                 const join = x =>
@@ -538,6 +518,11 @@
                     } [t] || "Bottom";
                 };
 
+                // unDigits :: [Int] -> Int
+                const unDigits = ds =>
+                    // The integer with the given digits.
+                    ds.reduce((a, x) => (10 * a) + x, 0);
+
                 // unQuoted :: String -> String
                 const unQuoted = s =>
                     1 < s.length ? (
@@ -549,7 +534,51 @@
                         String.fromCodePoint(34)
                     ) : s;
 
-                return main()
+                // userDialogWithValidation :: [Form.Field] ->
+                // String -> (values -> Bool) -> 
+                // (values -> ()) -> Promise
+                const userDialogWithValidation = fields =>
+                    // General constructor for omniJS dialogs,
+                    // where f is a continuation function 
+                    // in which a dialog result
+                    // is bound to the function argument.
+                    // Accesing values with the following
+                    // incantation:
+                    // dialog => dialog.values
+                    prompt => t => f => {
+                        const
+                            form = fields.reduce(
+                                (form, field) => (
+                                    form.addField(field),
+                                    form
+                                ),
+
+                                // Seed value - a new blank form.
+                                new Form()
+                            ),
+                            promise = form.show(prompt, 'OK');
+                        return (
+                            // .validate is not a method
+                            form.validate = t,
+                            promise.then(f)
+                        )
+                    };
+
+                // MAIN -----------------------------------------
+                return userDialogWithValidation([
+                    new Form.Field.String(
+                        'num',
+                        'Enter cycle length',
+                        "5"
+                    )
+                ])('Repeating Rotating List')(
+                    dialog => (() => {
+                        const v = dialog.values['num']
+                        return undefined !== v ? (
+                            [...v].every(isDigit)
+                        ) : false
+                    })()
+                )(main)
             };
 
             return omniJSContext()
