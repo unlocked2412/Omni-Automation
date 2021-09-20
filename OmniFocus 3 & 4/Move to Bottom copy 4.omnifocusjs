@@ -1,0 +1,153 @@
+/*{
+	"type": "action",
+	"author": "unlocked2412",
+	"version": "0.1",
+	"description": "A single-file plug-in.",
+}*/
+// Twitter: @unlocked2412
+(() =>
+    Object.assign(
+        new PlugIn.Action(selection => {
+            // OMNI JS CODE ---------------------------------------
+            const omniJSContext = () => {
+                // main :: IO ()
+                const main = () => {
+                    const
+                        ts = document.windows[0].selection.tasks,
+                        parent = ts[0].parent,
+                        preceding = precedingSiblings(ts[0]),
+                        following = followingSiblings(ts[0]),
+
+                        // Child.InsertionLocation
+                        top = parent.children[0].before,
+                        bottom = parent.children.slice(-1)[0].after,
+                        up = 0 === preceding.length ? (
+                            ts[0].before
+                        ) : last(preceding).before,
+                        down = 0 === following.length ? (
+                            ts[0].before
+                        ) : head(following).after;
+
+                    return (
+                        moveTasks(ts, bottom),
+                        `Moved ${ts.length} rows within Parent: "${
+                    parent.name
+                }"`
+                    )
+                };
+
+                // precedingSiblings :: OFItem -> [OFItem]
+                const precedingSiblings = item =>
+                    takeWhile(x => x !== item)(item.parent.children)
+
+                // followingSiblings :: OFItem -> [OFItem]
+                const followingSiblings = item =>
+                    takeWhileR(x => x !== item)(item.parent.children)
+
+                // FUNCTIONS --
+                // https://github.com/RobTrew/prelude-jxa
+                // JS Prelude --------------------------------------------------
+                // head :: [a] -> a
+                const head = xs => (
+                    ys => ys.length ? (
+                        ys[0]
+                    ) : undefined
+                )(list(xs));
+
+                // last :: [a] -> a
+                const last = xs =>
+                    // The last item of a list.
+                    0 < xs.length ? (
+                        xs.slice(-1)[0]
+                    ) : null;
+
+                // length :: [a] -> Int
+                const length = xs =>
+                    // Returns Infinity over objects without finite
+                    // length. This enables zip and zipWith to choose
+                    // the shorter argument when one is non-finite,
+                    // like cycle, repeat etc
+                    "GeneratorFunction" !== xs.constructor
+                    .constructor.name ? (
+                        xs.length
+                    ) : Infinity;
+
+                // list :: StringOrArrayLike b => b -> [a]
+                const list = xs =>
+                    // xs itself, if it is an Array,
+                    // or an Array derived from xs.
+                    Array.isArray(xs) ? (
+                        xs
+                    ) : Array.from(xs || []);
+
+                // takeWhile :: (a -> Bool) -> [a] -> [a]
+                // takeWhile :: (Char -> Bool) -> String -> String
+                const takeWhile = p =>
+                    // The longest prefix of xs in which
+                    // every element satisfies p.
+                    xs => xs.constructor.constructor.name !==
+                    "GeneratorFunction" ? (() => {
+                        const n = xs.length;
+
+                        return xs.slice(
+                            0, 0 < n ? until(
+                                i => n === i || !p(xs[i])
+                            )(i => 1 + i)(0) : 0
+                        );
+                    })() : takeWhileGen(p)(xs);
+
+                // takeWhileGen :: (a -> Bool) -> Gen [a] -> [a]
+                const takeWhileGen = p => xs => {
+                    const ys = [];
+                    let
+                        nxt = xs.next(),
+                        v = nxt.value;
+
+                    while (!nxt.done && p(v)) {
+                        ys.push(v);
+                        nxt = xs.next();
+                        v = nxt.value;
+                    }
+
+                    return ys;
+                };
+
+                // takeWhileR :: (a -> Bool) -> [a] -> [a]
+                const takeWhileR = p =>
+                    // The longest suffix of xs in which
+                    // all elements satisfy p.
+                    xs => {
+                        const ys = list(xs);
+
+                        return ys.slice(
+                            1 + until(
+                                i => !p(ys[i])
+                            )(i => i - 1)(
+                                ys.length - 1
+                            )
+                        );
+                    };
+
+                // until :: (a -> Bool) -> (a -> a) -> a -> a
+                const until = p =>
+                    // The value resulting from repeated applications
+                    // of f to the seed value x, terminating when
+                    // that result returns true for the predicate p.
+                    f => x => {
+                        let v = x;
+
+                        while (!p(v)) {
+                            v = f(v);
+                        }
+
+                        return v;
+                    };
+
+                return main()
+            };
+
+            return omniJSContext()
+        }), {
+            validate: selection => 0 < selection.tasks.length
+        })
+)();
