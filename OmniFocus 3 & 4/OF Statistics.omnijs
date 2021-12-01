@@ -1,0 +1,698 @@
+/*{
+	"type": "action"
+}*/
+// Twitter: @unlocked2412
+(() => {
+    // ---------------------- PLUGIN -----------------------
+    return Object.assign(
+        new PlugIn.Action(selection => {
+            'use strict';
+
+            // OMNI JS CODE ---------------------------------------
+            const omniJSContext = () => {
+                // main :: IO ()
+                const main = () => {
+                    const
+                        parent = selection.database,
+                        statsFor = flattenedObjectsByStatus(parent),
+                        tabbedList = compose(
+                            append('\t- '),
+                            intercalate(': '),
+                            listFromTuple
+                        ),
+                        statsList = compose(
+                            map(tabbedList),
+                            statsFor
+                        ),
+                        stats = unlines([
+                            `INBOX:`,
+                            `\t- Inbox items: ${inboxTasks().length}`,
+                            `FOLDERS:`,
+                            ...statsList('Folder'),
+                            `PROJECTS:`,
+                            ...statsList('Project'),
+                            `TAGS:`,
+                            ...statsList('Tag'),
+                            `TASKS:`,
+                            ...statsList('Task')
+                        ]);
+                    return new Alert(
+                        'OmniFocus Statistics',
+                        stats
+                    ).show();
+                };
+
+                // OmniFocus OmniJS --------------------------------------------
+                // enumValName :: EnumValue -> String 
+                const enumValName = x => {
+                    const dct = x.constructor;
+                    return Object.getOwnPropertyNames(dct)
+                        .find(k => x === dct[k]);
+                }; 
+
+                const flattenedObjectsByStatus = parent => type => {
+                    const tupleFromObj =
+                        fanArrow(
+                            compose(
+                                enumValName,
+                                x => x[x.constructor.name === 'Task' ? 'taskStatus' : 'status']
+                            )
+                        )(x => x.name)
+                    return compose(
+                        map(second(length)),
+                        groupSort,
+                        map(tupleFromObj)
+                    )(parent['flattened' + type + 's'])
+                }
+
+                const inboxTasks = () => {
+                    const xs = filter(x => x.inInbox)(
+                        flattenedTasks
+                    );
+                    return concatMap(x => {
+                        const tasks = x.flattenedTasks;
+                        return 0 === tasks.length ? (
+                            x
+                        ) : [x, ...tasks]
+                    })(xs)
+                };
+
+                // FUNCTIONS --
+                // https://github.com/RobTrew/prelude-jxa
+
+                // JS Prelude --------------------------------------------------
+                // Just :: a -> Maybe a
+                const Just = x => ({
+                    type: 'Maybe',
+                    Nothing: false,
+                    Just: x
+                });
+
+                // Left :: a -> Either a b
+                const Left = x => ({
+                    type: 'Either',
+                    Left: x
+                });
+
+                // Nothing :: Maybe a
+                const Nothing = () => ({
+                    type: 'Maybe',
+                    Nothing: true,
+                });
+
+                // Right :: b -> Either a b
+                const Right = x => ({
+                    type: 'Either',
+                    Right: x
+                });
+
+                // Tuple (,) :: a -> b -> (a, b)
+                const Tuple = a =>
+                    b => ({
+                        type: 'Tuple',
+                        '0': a,
+                        '1': b,
+                        length: 2
+                    });
+
+                // append (++) :: [a] -> [a] -> [a]
+                const append = xs =>
+                    // A list defined by the
+                    // concatenation of two others.
+                    ys => xs.concat(ys);
+
+                // bind (>>=) :: Monad m => m a -> (a -> m b) -> m b
+                const bind = m =>
+                    mf => (Array.isArray(m) ? (
+                        bindList
+                    ) : (() => {
+                        const t = m.type;
+                        return 'Either' === t ? (
+                            bindLR
+                        ) : 'Maybe' === t ? (
+                            bindMay
+                        ) : 'Tuple' === t ? (
+                            bindTuple
+                        ) : ('function' === typeof m) ? (
+                            bindFn
+                        ) : undefined;
+                    })()(m)(mf));
+
+                // bindFn (>>=) :: (a -> b) -> (b -> a -> c) -> a -> c
+                const bindFn = f =>
+                    // Binary operator applied over f x and x.
+                    bop => x => bop(f(x))(x);
+
+                // bindLR (>>=) :: Either a -> 
+                // (a -> Either b) -> Either b
+                const bindLR = m =>
+                    mf => undefined !== m.Left ? (
+                        m
+                    ) : mf(m.Right);
+
+                // bindList (>>=) :: [a] -> (a -> [b]) -> [b]
+                const bindList = xs =>
+                    mf => [...xs].flatMap(mf);
+
+                // bindMay (>>=) :: Maybe a -> (a -> Maybe b) -> Maybe b
+                const bindMay = mb =>
+                    // Nothing if mb is Nothing, or the application of the
+                    // (a -> Maybe b) function mf to the contents of mb.
+                    mf => mb.Nothing ? (
+                        mb
+                    ) : mf(mb.Just);
+
+                // bindTuple (>>=) :: Monoid a => (a, a) -> (a -> (a, b)) -> (a, b)
+                const bindTuple = tpl =>
+                    f => {
+                        const t2 = f(tpl[1]);
+                        return Tuple(mappend(tpl[0])(t2[0]))(
+                            t2[1]
+                        );
+                    };
+
+                // comparing :: (a -> b) -> (a -> a -> Ordering)
+                const comparing = f =>
+                    x => y => {
+                        const
+                            a = f(x),
+                            b = f(y);
+                        return a < b ? -1 : (a > b ? 1 : 0);
+                    };
+
+                // compose (<<<) :: (b -> c) -> (a -> b) -> a -> c
+                const compose = (...fs) =>
+                    // A function defined by the right-to-left
+                    // composition of all the functions in fs.
+                    fs.reduce(
+                        (f, g) => x => f(g(x)),
+                        x => x
+                    );
+
+                // concat :: [[a]] -> [a]
+                // concat :: [String] -> String
+                const concat = xs => (
+                    ys => 0 < ys.length ? (
+                        ys.every(Array.isArray) ? (
+                            []
+                        ) : ''
+                    ).concat(...ys) : ys
+                )(list(xs));
+
+                // concatMap :: (a -> [b]) -> [a] -> [b]
+                const concatMap = f =>
+                    // Where (a -> [b]) returns an Array, this 
+                    // is equivalent to .flatMap, which should be
+                    // used by default.
+                    // but if (a -> [b]) returns String rather than [Char], 
+                    // the monoid unit is '' in place of [], and a 
+                    // concatenated string is returned.
+                    xs => {
+                        const ys = list(xs).map(f);
+                        return 0 < ys.length ? (
+                            ys.some(y => 'string' !== typeof y) ? (
+                                []
+                            ) : ''
+                        ).concat(...ys) : ys;
+                    };
+
+                // dropAround :: (a -> Bool) -> [a] -> [a]
+                // dropAround :: (Char -> Bool) -> String -> String
+                const dropAround = p =>
+                    xs => dropWhile(p)(
+                        dropWhileEnd(p)(xs)
+                    );
+
+                // dropWhile :: (a -> Bool) -> [a] -> [a]
+                // dropWhile :: (Char -> Bool) -> String -> String
+                const dropWhile = p =>
+                    xs => {
+                        const n = xs.length;
+                        return xs.slice(
+                            0 < n ? until(
+                                i => n === i || !p(xs[i])
+                            )(i => 1 + i)(0) : 0
+                        );
+                    };
+
+                // dropWhileEnd :: (a -> Bool) -> [a] -> [a]
+                // dropWhileEnd :: (Char -> Bool) -> String -> [Char]
+                const dropWhileEnd = p =>
+                    // xs without the longest suffix for which
+                    // p returns true for all elements.
+                    xs => {
+                        let i = xs.length;
+                        while (i-- && p(xs[i])) {}
+                        return xs.slice(0, i + 1);
+                    };
+
+                // enumFromTo :: Int -> Int -> [Int]
+                const enumFromTo = m =>
+                    n => !isNaN(m) ? (
+                        Array.from({
+                            length: 1 + n - m
+                        }, (_, i) => m + i)
+                    ) : enumFromTo_(m)(n);
+
+                // enumFromTo_ :: Enum a => a -> a -> [a]
+                const enumFromTo_ = m => n => {
+                    const [x, y] = [m, n].map(fromEnum),
+                        b = x + (isNaN(m) ? 0 : m - x);
+                    return Array.from({
+                        length: 1 + (y - x)
+                    }, (_, i) => toEnum(m)(b + i));
+                };
+
+                // eq (==) :: Eq a => a -> a -> Bool
+                const eq = a =>
+                    // True when a and b are equivalent in the terms
+                    // defined below for their shared data type.
+                    b => {
+                        const t = typeof a;
+                        return t !== typeof b ? (
+                            false
+                        ) : 'object' !== t ? (
+                            'function' !== t ? (
+                                a === b
+                            ) : a.toString() === b.toString()
+                        ) : (() => {
+                            const kvs = Object.entries(a);
+                            return kvs.length !== Object.keys(b).length ? (
+                                false
+                            ) : kvs.every(([k, v]) => eq(v)(b[k]));
+                        })();
+                    };
+
+                // fanArrow (&&&) :: (a -> b) -> (a -> c) -> (a -> (b, c))
+                const fanArrow = f =>
+                    // A function from x to a tuple of (f(x), g(x))
+                    // ((,) . f <*> g)
+                    g => x => Tuple(f(x))(
+                        g(x)
+                    );
+
+                // filter :: (a -> Bool) -> [a] -> [a]
+                const filter = p =>
+                    // The elements of xs which match
+                    // the predicate p.
+                    xs => [...xs].filter(p);
+
+                // find :: (a -> Bool) -> [a] -> Maybe a
+                const find = p =>
+                    // Just the first element in xs which 
+                    // matches the predicate p, or
+                    // Nothing if no match is found.
+                    xs => xs.constructor.constructor.name !== (
+                        'GeneratorFunction'
+                    ) ? (() => {
+                        const
+                            ys = list(xs),
+                            i = ys.findIndex(p);
+                        return -1 !== i ? (
+                            Just(ys[i])
+                        ) : Nothing();
+                    })() : findGen(p)(xs);
+
+                // findGen :: (a -> Bool) -> Gen [a] -> Maybe a
+                const findGen = p =>
+                    // Just the first match for the predicate p
+                    // in the generator stream xs, or Nothing
+                    // if no match is found.
+                    xs => {
+                        const
+                            mb = until(tpl => {
+                                const nxt = tpl[0];
+                                return nxt.done || p(nxt.value);
+                            })(
+                                tpl => Tuple(tpl[1].next())(
+                                    tpl[1]
+                                )
+                            )(Tuple(xs.next())(xs))[0];
+                        return mb.done ? (
+                            Nothing()
+                        ) : Just(mb.value);
+                    };
+
+                // findIndex :: (a -> Bool) -> [a] -> Maybe Int
+                const findIndex = p =>
+                    //  Just the index of the first element in
+                    //  xs for which p(x) is true, or
+                    //  Nothing if there is no such element.
+                    xs => {
+                        const i = [...xs].findIndex(p);
+                        return -1 !== i ? (
+                            Just(i)
+                        ) : Nothing();
+                    };
+
+                // fromEnum :: Enum a => a -> Int
+                const fromEnum = x =>
+                    typeof x !== 'string' ? (
+                        x.constructor === Object ? (
+                            x.value
+                        ) : parseInt(Number(x))
+                    ) : x.codePointAt(0);
+
+                // fst :: (a, b) -> a
+                const fst = tpl =>
+                    // First member of a pair.
+                    tpl[0];
+
+                // groupBy :: (a -> a -> Bool) -> [a] -> [[a]]
+                const groupBy = fEq =>
+                    // Typical usage: groupBy(on(eq)(f), xs)
+                    xs => (ys => 0 < ys.length ? (() => {
+                        const
+                            tpl = ys.slice(1).reduce(
+                                (gw, x) => {
+                                    const
+                                        gps = gw[0],
+                                        wkg = gw[1];
+                                    return fEq(wkg[0])(x) ? (
+                                        Tuple(gps)(wkg.concat([x]))
+                                    ) : Tuple(gps.concat([wkg]))([x]);
+                                },
+                                Tuple([])([ys[0]])
+                            ),
+                            v = tpl[0].concat([tpl[1]]);
+                        return 'string' !== typeof xs ? (
+                            v
+                        ) : v.map(x => x.join(''));
+                    })() : [])(list(xs));
+
+                // head :: [a] -> a
+                const head = xs => (
+                    ys => ys.length ? (
+                        ys[0]
+                    ) : undefined
+                )(list(xs));
+
+                // identity :: a -> a
+                const identity = x =>
+                    // The identity function.
+                    x;
+
+                // intercalate :: [a] -> [[a]] -> [a]
+                // intercalate :: String -> [String] -> String
+                const intercalate = sep => xs =>
+                    0 < xs.length && 'string' === typeof sep &&
+                    'string' === typeof xs[0] ? (
+                        xs.join(sep)
+                    ) : concat(intersperse(sep)(xs));
+
+                // intersperse :: a -> [a] -> [a]
+                // intersperse :: Char -> String -> String
+                const intersperse = sep => xs => {
+                    // intersperse(0, [1,2,3]) -> [1, 0, 2, 0, 3]
+                    const bln = 'string' === typeof xs;
+                    return xs.length > 1 ? (
+                        (bln ? concat : x => x)(
+                            (bln ? (
+                                xs.split('')
+                            ) : xs)
+                            .slice(1)
+                            .reduce((a, x) => a.concat([sep, x]), [xs[0]])
+                        )) : xs;
+                };
+
+                // join :: Monad m => m (m a) -> m a
+                const join = x =>
+                    bind(x)(identity);
+
+                // keys :: Dict -> [String]
+                const keys = Object.keys;
+
+                // length :: [a] -> Int
+                const length = xs =>
+                    // Returns Infinity over objects without finite
+                    // length. This enables zip and zipWith to choose
+                    // the shorter argument when one is non-finite,
+                    // like cycle, repeat etc
+                    'GeneratorFunction' !== xs.constructor
+                    .constructor.name ? (
+                        xs.length
+                    ) : Infinity;
+
+                // list :: StringOrArrayLike b => b -> [a]
+                const list = xs =>
+                    // xs itself, if it is an Array,
+                    // or an Array derived from xs.
+                    Array.isArray(xs) ? (
+                        xs
+                    ) : Array.from(xs || []);
+
+                // listFromTuple :: (a, a ...) -> [a]
+                const listFromTuple = tpl =>
+                    Array.from(tpl);
+
+                // map :: (a -> b) -> [a] -> [b]
+                const map = f =>
+                    // The list obtained by applying f
+                    // to each element of xs.
+                    // (The image of xs under f).
+                    xs => [...xs].map(f);
+
+                // mappend (<>) :: Monoid a => a -> a -> a
+                const mappend = a =>
+                    // Associative operation 
+                    // defined for various monoid types.
+                    b => (t => (Boolean(t) ? (
+                        'Maybe' === t ? (
+                            mappendMaybe
+                        ) : mappendTuple
+                    ) : Array.isArray(a) ? (
+                        append
+                    ) : 'function' === typeof a ? (
+                        mappendFn
+                    ) : mappendOrd)(a)(b))(a.type);
+
+                // mappendFn :: Monoid b => (a -> b) -> (a -> b) -> (a -> b)
+                const mappendFn = f =>
+                    g => x => mappend(f(x))(
+                        g(x)
+                    );
+
+                // mappendMaybe (<>) :: Maybe a -> Maybe a -> Maybe a
+                const mappendMaybe = a =>
+                    b => a.Nothing ? (
+                        b
+                    ) : b.Nothing ? (
+                        a
+                    ) : Just(
+                        mappend(a.Just)(
+                            b.Just
+                        )
+                    );
+
+                // mappendOrd (<>) :: Ordering -> Ordering -> Ordering
+                const mappendOrd = x =>
+                    y => 0 !== x ? (
+                        x
+                    ) : y;
+
+                // mappendTuple (<>) :: (a, b) -> (a, b) -> (a, b)
+                const mappendTuple = t => t1 =>
+                    Tuple(
+                        mappend(t[0])(t1[0])
+                    )(
+                        mappend(t[1])(t1[1])
+                    );
+
+                // min :: Ord a => a -> a -> a
+                const min = a =>
+                    b => b < a ? b : a;
+
+                // on :: (b -> b -> c) -> (a -> b) -> a -> a -> c
+                const on = f =>
+                    // e.g. groupBy(on(eq)(length))
+                    g => a => b => f(g(a))(g(b));
+
+                // replace :: String -> String -> String -> String
+                // replace :: Regex -> String -> String -> String
+                const replace = needle => strNew => strHaystack =>
+                    strHaystack.replace(
+                        'string' !== typeof needle ? (
+                            needle
+                        ) : new RegExp(needle, 'g'),
+                        strNew
+                    );
+
+                // second :: (a -> b) -> ((c, a) -> (c, b))
+                const second = f =>
+                    // A function over a simple value lifted
+                    // to a function over a tuple.
+                    // f (a, b) -> (a, f(b))
+                    xy => Tuple(xy[0])(
+                        f(xy[1])
+                    );
+
+                // show :: a -> String
+                // show :: a -> Int -> Indented String
+                const show = x => {
+                    const
+                        e = ('function' !== typeof x) ? (
+                            x
+                        ) : {
+                            type: 'Function',
+                            f: x
+                        };
+                    return JSON.stringify(e, (_, v) => {
+                        const
+                            f = ((null !== v) && (undefined !== v)) ? (() => {
+                                const t = v.type;
+                                return 'Either' === t ? (
+                                    showLR
+                                ) : 'Function' === t ? (
+                                    dct => 'λ' + dct.f.toString()
+                                ) : 'Maybe' === t ? (
+                                    showMaybe
+                                ) : 'Ordering' === t ? (
+                                    showOrdering
+                                ) : 'Ratio' === t ? (
+                                    showRatio
+                                ) : 'string' === typeof t && t.startsWith('Tuple') ? (
+                                    showTuple
+                                ) : Array.isArray(v) ? (
+                                    showList
+                                ) : undefined;
+                            })() : showUndefined;
+                        return Boolean(f) ? (
+                            f(v)
+                        ) : 'string' !== typeof v ? (
+                            v
+                        ) : v;
+                    });
+                };
+
+                // showLR :: Either a b -> String
+                const showLR = lr => {
+                    const k = undefined !== lr.Left ? (
+                        'Left'
+                    ) : 'Right';
+                    return k + '(' + unQuoted(show(lr[k])) + ')';
+                };
+
+                // showList :: [a] -> String
+                const showList = xs =>
+                    '[' + xs.map(show)
+                    .join(', ')
+                    .replace(/[\"]/g, '') + ']';
+
+                // showMaybe :: Maybe a -> String
+                const showMaybe = mb =>
+                    mb.Nothing ? (
+                        'Nothing'
+                    ) : 'Just(' + unQuoted(show(mb.Just)) + ')';
+
+                // showOrdering :: Ordering -> String
+                const showOrdering = e =>
+                    0 < e.value ? (
+                        'GT'
+                    ) : 0 > e.value ? (
+                        'LT'
+                    ) : 'EQ';
+
+                // showRatio :: Ratio -> String
+                const showRatio = r =>
+                    'Ratio' !== r.type ? (
+                        r.toString()
+                    ) : r.n.toString() + (
+                        1 !== r.d ? (
+                            '/' + r.d.toString()
+                        ) : ''
+                    );
+
+                // showTuple :: Tuple -> String
+                const showTuple = tpl =>
+                    '(' + enumFromTo(0)(tpl.length - 1)
+                    .map(x => unQuoted(show(tpl[x])))
+                    .join(',') + ')';
+
+                // showUndefined :: () -> String
+                const showUndefined = () => '(⊥)';
+
+                // snd :: (a, b) -> b
+                const snd = tpl =>
+                    // Second member of a pair.
+                    tpl[1];
+
+                // sort :: Ord a => [a] -> [a]
+                const sort = xs => list(xs).slice()
+                    .sort((a, b) => a < b ? -1 : (a > b ? 1 : 0));
+
+                // sortOn :: Ord b => (a -> b) -> [a] -> [a]
+                const sortOn = f =>
+                    // Equivalent to sortBy(comparing(f)), but with f(x)
+                    // evaluated only once for each x in xs.
+                    // ('Schwartzian' decorate-sort-undecorate).
+                    xs => xs.map(
+                        x => Tuple(f(x))(x)
+                    )
+                    .sort(uncurry(comparing(fst)))
+                    .map(snd);
+
+                // toEnum :: a -> Int -> a
+                const toEnum = e =>
+                    // The first argument is a sample of the type
+                    // allowing the function to make the right mapping
+                    x => ({
+                        'number': Number,
+                        'string': String.fromCodePoint,
+                        'boolean': Boolean,
+                        'object': v => e.min + v
+                    } [typeof e])(x);
+
+                // unQuoted :: String -> String
+                const unQuoted = s =>
+                    dropAround(x => 34 === x.codePointAt(0))(
+                        s
+                    );
+
+                // uncurry :: (a -> b -> c) -> ((a, b) -> c)
+                const uncurry = f =>
+                    // A function over a pair, derived
+                    // from a curried function.
+                    function () {
+                        const
+                            args = arguments,
+                            xy = Boolean(args.length % 2) ? (
+                                args[0]
+                            ) : args;
+                        return f(xy[0])(xy[1]);
+                    };
+
+                // unlines :: [String] -> String
+                const unlines = xs =>
+                    // A single string formed by the intercalation
+                    // of a list of strings with the newline character.
+                    xs.join('\n');
+
+                // until :: (a -> Bool) -> (a -> a) -> a -> a
+                const until = p =>
+                    f => x => {
+                        let v = x;
+                        while (!p(v)) v = f(v);
+                        return v;
+                    };
+
+
+                // JS Basics ---------------------------------------------------
+                // groupOn :: Eq b => (a -> b) -> [a] -> [[a]]
+                const groupOn = f => groupBy(on(eq)(f))
+
+                // groupSort :: Ord k => [(k, v)] -> [(k, [v])]
+                const groupSort = compose(
+                    map(x => Tuple(fst(head(x)))(map(snd)(x))),
+                    groupOn(fst),
+                    sortOn(fst)
+                )
+
+                return main();
+            };
+
+            return omniJSContext()
+
+        }), {
+            validate: selection => true
+        });
+})();

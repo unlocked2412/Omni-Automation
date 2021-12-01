@@ -1,0 +1,169 @@
+/*{
+	"type": "action"
+}*/
+// Twitter: @unlocked2412
+(() =>
+    Object.assign(
+        new PlugIn.Action(selection => {
+            // OMNI JS CODE ---------------------------------------
+            const omniJSContext = () => {
+                // main :: IO ()
+                const main = () => {
+                    const
+                        //selection = document.windows[0].selection,
+                        selectedObjects = ["projects", "tasks"].flatMap(
+                            k => Array.from(selection[k])
+                        ),
+                        tree = Node(0)(
+                            map(
+                                fmapPureOF(
+                                    x => x.estimatedMinutes || 0
+                                )
+                            )(commonAncestors(selectedObjects))
+                        ),
+                        totalEstimatedMinutes = foldTree(
+                            x => xs => x + sum(xs)
+                        )(tree)
+                    return (
+                        new Alert(
+                            'Total of estimated minutes',
+                            `${totalEstimatedMinutes} mins\n\n` + (
+                                'in descendants of selected project(s) or task(s).'
+                            )
+                        )
+                    ).show();
+                };
+
+
+                // FUNCTIONS --
+                // https://github.com/RobTrew/prelude-jxa
+                // JS Prelude --------------------------------------------------
+                // Node :: a -> [Tree a] -> Tree a
+                const Node = v =>
+                    // Constructor for a Tree node which connects a
+                    // value of some kind to a list of zero or
+                    // more child trees.
+                    xs => ({
+                        type: 'Node',
+                        root: v,
+                        nest: xs || []
+                    });
+
+                // concat :: [[a]] -> [a]
+                // concat :: [String] -> String
+                const concat = xs => (
+                    ys => 0 < ys.length ? (
+                        ys.every(Array.isArray) ? (
+                            []
+                        ) : ''
+                    ).concat(...ys) : ys
+                )(list(xs));
+
+                // filter :: (a -> Bool) -> [a] -> [a]
+                const filter = p =>
+                    // The elements of xs which match
+                    // the predicate p.
+                    xs => [...xs].filter(p);
+
+                // foldTree :: (a -> [b] -> b) -> Tree a -> b
+                const foldTree = f => {
+                    // The catamorphism on trees. A summary
+                    // value obtained by a depth-first fold.
+                    const go = tree => f(tree.root)(
+                        tree.nest.map(go)
+                    );
+                    return go;
+                };
+
+                // length :: [a] -> Int
+                const length = xs =>
+                    // Returns Infinity over objects without finite
+                    // length. This enables zip and zipWith to choose
+                    // the shorter argument when one is non-finite,
+                    // like cycle, repeat etc
+                    'GeneratorFunction' !== xs.constructor
+                    .constructor.name ? (
+                        xs.length
+                    ) : Infinity;
+
+                // list :: StringOrArrayLike b => b -> [a]
+                const list = xs =>
+                    // xs itself, if it is an Array,
+                    // or an Array derived from xs.
+                    Array.isArray(xs) ? (
+                        xs
+                    ) : Array.from(xs || []);
+
+                // map :: (a -> b) -> [a] -> [b]
+                const map = f =>
+                    // The list obtained by applying f
+                    // to each element of xs.
+                    // (The image of xs under f).
+                    xs => [...xs].map(f);
+
+                // nest :: Tree a -> [a]
+                const nest = tree => {
+                    // Allowing for lazy (on-demand) evaluation.
+                    // If the nest turns out to be a function –
+                    // rather than a list – that function is applied
+                    // here to the root, and returns a list.
+                    const xs = tree.nest;
+                    return 'function' !== typeof xs ? (
+                        xs
+                    ) : xs(root(x));
+                };
+
+                // root :: Tree a -> a
+                const root = tree =>
+                    tree.root;
+
+                // sum :: [Num] -> Num
+                const sum = xs =>
+                    // The numeric sum of all values in xs.
+                    xs.reduce((a, x) => a + x, 0);
+
+                // until :: (a -> Bool) -> (a -> a) -> a -> a
+                const until = p =>
+                    f => x => {
+                        let v = x;
+                        while (!p(v)) v = f(v);
+                        return v;
+                    };
+
+                // OmniJS OmniFocus --------------------------------------------
+                // commonAncestors :: [OFItem] -> [OFItem]
+                const commonAncestors = items => (
+                    // Only items which do not descend
+                    // from other items in the list. 
+                    itemSet => items.filter(x =>
+                        !until(
+                            p => !p || itemSet.has(p)
+                        )(
+                            v => v.parent
+                        )(x.parent)
+                    )
+                )(new Set(items))
+
+                // fmapPureOF :: (OF Item -> a) -> OF Item -> Tree a
+                const fmapPureOF = f => item => {
+                    const go = x => {
+                        const v = 'Project' !== x.constructor.name ? (
+                            x
+                        ) : x.task;
+                        return Node(f(v))((
+                            v
+                        ).children.map(go));
+                    }
+                    return go(item);
+                };
+
+                return main()
+            };
+
+            return omniJSContext()
+        }), {
+            validate: selection => ["projects", "tasks"].some(
+                k => selection[k].length > 0
+            )
+        })
+)();
