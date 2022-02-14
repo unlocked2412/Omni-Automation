@@ -1,0 +1,83 @@
+/*{
+	"type": "action",
+	"author": "unlocked2412",
+	"version": "0.1",
+	"description": "A single-file plug-in.",
+}*/
+// Twitter: @unlocked2412
+(() =>
+    Object.assign(
+        new PlugIn.Action(selection => {
+            // OMNI JS CODE ---------------------------------------
+            const omniJSContext = () => {
+                // main :: IO ()
+                const main = () => {
+                    const
+                        vs = takeWhile(isDigit)(list(app.userVersion.versionString)),
+                        win = document.windows[0],
+                        // selection = win.selection,
+                        parentObject = win.content.nodeForObject(
+                            selection.tasks[0]
+                        ).parent.object,
+                        parentType = parentObject.constructor.name;
+
+                    return parentType === "Task" || parentType === "Project" ? (
+                        (
+                            moveTasks(selection.tasks, parentObject.ending),
+                            selection.tasks
+                        )
+                    ) : 4 <= vs ? (
+                        // OmniFocus version is equal or greater than 4
+                        // moving a task within a tag is implemented
+                        parentType === "Tag" ? (
+                            (
+                                parentObject.moveTasks(selection.tasks, parentObject.endingOfTasks),
+                                selection.tasks
+                            )
+                        ) : (
+                            Tag.forecastTag.moveTasks(selection.tasks, Tag.forecastTag.endingOfTasks),
+                            selection.tasks
+                        )
+                    ) : (
+                        new Alert(
+                            "Feature isn't available",
+                            "This feature is only available in recent OmniFocus 4 builds"
+                        ).show(),
+                        []
+                    )
+                };
+
+                // GENERICS
+                // isDigit :: Char -> Bool
+                const isDigit = c => {
+                    const n = c.codePointAt(0);
+
+                    return 48 <= n && 57 >= n;
+                };
+
+                // list :: StringOrArrayLike b => b -> [a]
+                const list = xs =>
+                    // xs itself, if it is an Array,
+                    // or an Array derived from xs.
+                    Array.isArray(xs) ? (
+                        xs
+                    ) : Array.from(xs || []);
+
+                // takeWhile :: (a -> Bool) -> [a] -> [a]
+                const takeWhile = p =>
+                    xs => {
+                        const i = xs.findIndex(x => !p(x));
+
+                        return -1 !== i ? (
+                            xs.slice(0, i)
+                        ) : xs;
+                    };
+
+                return main()
+            };
+
+            return omniJSContext()
+        }), {
+            validate: selection => 0 < selection.tasks.length
+        })
+)();
