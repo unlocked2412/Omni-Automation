@@ -14,7 +14,7 @@
                 const main = () => {
                     const
                         vs = takeWhile(isDigit)(list(app.userVersion.versionString)),
-                        win = document.windows[0],
+                        win = selection.window,
                         // selection = win.selection,
                         parentObject = win.content.nodeForObject(
                             selection.tasks[0]
