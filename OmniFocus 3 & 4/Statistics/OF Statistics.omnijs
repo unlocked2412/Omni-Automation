@@ -48,7 +48,7 @@
                     const dct = x.constructor;
                     return Object.getOwnPropertyNames(dct)
                         .find(k => x === dct[k]);
-                }; 
+                };
 
                 const flattenedObjectsByStatus = parent => type => {
                     const tupleFromObj =
@@ -62,9 +62,21 @@
                         map(second(length)),
                         groupSort,
                         map(tupleFromObj),
-                        filter(o => !(o.constructor.name === 'Task' && o.project)) // exclude tasks which are a root task of a project
+                        filter(o =>
+                            o.constructor.name === "Task" &&
+                            !isRootTask(o)
+                        )
                     )(parent['flattened' + type + 's'])
                 }
+
+                // isRootTask :: OFTask -> Bool
+                const isRootTask = task => {
+                    const
+                        f = x => x.id.primaryKey;
+                    return f(task) === f(
+                        task.containingProject
+                    )
+                };
 
                 const inboxTasks = () => {
                     const xs = filter(x => x.inInbox)(
