@@ -61,7 +61,8 @@
                     return compose(
                         map(second(length)),
                         groupSort,
-                        map(tupleFromObj)
+                        map(tupleFromObj),
+                        filter(o => !(o.constructor.name === 'Task' && o.project)) // exclude tasks which are a root task of a project
                     )(parent['flattened' + type + 's'])
                 }
 
