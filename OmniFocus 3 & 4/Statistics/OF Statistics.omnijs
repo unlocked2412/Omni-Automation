@@ -78,6 +78,7 @@
                     )
                 };
 
+                // inboxTasks :: () -> [OFTask]
                 const inboxTasks = () => {
                     const xs = filter(x => x.inInbox)(
                         flattenedTasks
