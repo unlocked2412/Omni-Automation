@@ -63,20 +63,14 @@
                         groupSort,
                         map(tupleFromObj),
                         filter(o =>
-                            o.constructor.name === "Task" &&
-                            !isRootTask(o)
+                            !(o.constructor.name === "Task" &&
+                            isRootTask(o))
                         )
                     )(parent['flattened' + type + 's'])
                 }
 
                 // isRootTask :: OFTask -> Bool
-                const isRootTask = task => {
-                    const
-                        f = x => x.id.primaryKey;
-                    return f(task) === f(
-                        task.containingProject
-                    )
-                };
+                const isRootTask = task => Boolean(task.project)
 
                 // inboxTasks :: () -> [OFTask]
                 const inboxTasks = () => {
