@@ -14,14 +14,20 @@
                 const main = () => {
                     const
                         vs = takeWhile(isDigit)(list(app.userVersion.versionString)),
-                        win = selection.window,
-                        // selection = win.selection,
-                        parentObject = win.content.nodeForObject(
+                        parentObject = selection.window.content.nodeForObject(
                             selection.tasks[0]
                         ).parent.object,
                         parentType = parentObject.constructor.name;
 
-                    return parentType === "Task" || parentType === "Project" ? (
+                    return parentType === "_omnijs_AnonymousProxy" || parentType === "ForecastDay" ? (
+                        (
+                            new Alert(
+                                "Feature isn't available",
+                                "Feature is not available with current view"
+                            ).show(),
+                            []
+                        )
+                    ) : parentType === "Task" || parentType === "Project" ? (
                         (
                             moveTasks(selection.tasks, parentObject.ending),
                             selection.tasks
@@ -35,7 +41,7 @@
                                 selection.tasks
                             )
                         ) : (
-                            Tag.forecastTag.moveTasks(selection.tasks, Tag.forecastTag.endingOfTasks),
+                            parentObject.moveTasks(selection.tasks, Tag.forecastTag.endingOfTasks),
                             selection.tasks
                         )
                     ) : (

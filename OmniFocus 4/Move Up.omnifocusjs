@@ -1,0 +1,87 @@
+/*{
+	"type": "action",
+	"author": "unlocked2412",
+	"version": "0.1",
+	"description": "A single-file plug-in.",
+}*/
+// Twitter: @unlocked2412
+(() =>
+	Object.assign(
+		new PlugIn.Action(selection => {
+			// OMNI JS CODE ---------------------------------------
+			const omniJSContext = () => {
+				// main :: IO ()
+				const main = () => {
+					const
+						win = selection.window,
+						node = win.content.nodeForObject(
+							selection.tasks[0]
+						),
+						p = node.parent;
+
+					return bindMay(
+						previousSibling(node)
+					)(
+						nd => (
+							isTag(p.object) ? (
+								p.object.moveTasks(selection.tasks, p.object.beforeTask(nd.object))
+							) : moveTasks(selection.tasks, nd.object.before),
+							Just(selection.tasks)
+						)
+					)
+				};
+				// GENERICS ----------------------------------------------------------------
+				// https://github.com/RobTrew/prelude-jxa
+				// JS Prelude --------------------------------------------------
+				// Just :: a -> Maybe a
+				const Just = x => ({
+					type: "Maybe",
+					Nothing: false,
+					Just: x
+				});
+
+				// Nothing :: Maybe a
+				const Nothing = () => ({
+					type: "Maybe",
+					Nothing: true
+				});
+
+				// bindMay (>>=) :: Maybe a -> (a -> Maybe b) -> Maybe b
+				const bindMay = mb =>
+					// Nothing if mb is Nothing, or the application of the
+					// (a -> Maybe b) function mf to the contents of mb.
+					mf => mb.Nothing ? (
+						mb
+					) : mf(mb.Just);
+
+				// or :: [Bool] -> Bool
+				const or = xs =>
+					xs.some(Boolean);
+
+				// OmniJS OmniFocus --------------------------------------------
+				// isTag :: DatabaseObject -> Bool
+				const isTag = dbObject => {
+					return dbObject.constructor.name === "Tag"
+				}
+
+				// previousSibling :: TreeNode -> Maybe TreeNode
+				const previousSibling = node => {
+					const
+						parent = node.parent,
+						children = parent.children,
+						i = children.findIndex(
+							x => x === node
+						);
+					return i < 1 ? (
+						Nothing()
+					) : Just(children[i - 1])
+				};
+
+				return main()
+			};
+
+			return omniJSContext()
+		}), {
+			validate: selection => selection.tasks.length > 0
+		})
+)();
