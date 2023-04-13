@@ -1,1 +1,2 @@
-*.scpt linguist-language=JavaScript
+*.omnifocusjs linguist-language=JavaScript
+*.omnioutlinerjs linguist-language=JavaScript
