@@ -15,14 +15,16 @@
                     const
                         proj = selection
                         .tasks[0]
-                        .containingProject,
-                        location = proj.parentFolder;
-
+                        .containingProject;
+                    
                     return convertTasksToProjects(
                         selection.tasks,
-                        null === location ? (
+                        null === proj ? (
+                            // Tasks are in the inbox
+                            library.ending
+                        ) : null === proj.parentFolder ? (
                             proj.after
-                        ) : location.beginning
+                        ) : proj.parentFolder.beginning
                     )
                 };
 
