@@ -5,6 +5,7 @@
 	"description": "A single-file plug-in.",
 }*/
 // Twitter: @unlocked2412
+// Test
 (() =>
     Object.assign(
         new PlugIn.Action(selection => {
