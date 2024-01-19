@@ -1,10 +1,11 @@
 /*{
-	"type": "action",
-	"author": "unlocked2412",
-	"version": "0.1",
-	"description": "A single-file plug-in.",
+    "type": "action",
+    "author": "unlocked2412",
+    "version": "0.1",
+    "description": "A single-file plug-in.",
 }*/
 // Twitter: @unlocked2412
+// Test
 (() =>
     Object.assign(
         new PlugIn.Action(selection => {
@@ -13,77 +14,44 @@
                 // main :: IO ()
                 const main = () => {
                     const
-                        vs = takeWhile(isDigit)(list(app.userVersion.versionString)),
-                        parentObject = selection.window.content.nodeForObject(
+                        win = document.windows[0],
+                        selection = win.selection,
+                        parentNode = win.content.nodeForObject(
                             selection.tasks[0]
-                        ).parent.object,
-                        parentType = parentObject.constructor.name;
+                        ).parent
 
-                    return parentType === "_omnijs_AnonymousProxy" || parentType === "ForecastDay" ? (
+                    return parentNode.isRootNode ? (
                         (
                             new Alert(
                                 "Feature isn't available",
-                                "Feature is not available with current view"
+                                "Parent node is root node."
                             ).show(),
                             []
                         )
-                    ) : parentType === "Task" || parentType === "Project" ? (
+                    ) : parentNode.object.constructor.name === "Task" || parentNode.object.constructor.name === "Project" ? (
                         (
-                            moveTasks(selection.tasks, parentObject.ending),
+                            moveTasks(selection.tasks, parentNode.object.ending),
                             selection.tasks
                         )
-                    ) : 4 <= vs ? (
-                        // OmniFocus version is equal or greater than 4
-                        // moving a task within a tag is implemented
-                        parentType === "Tag" ? (
-                            (
-                                parentObject.moveTasks(selection.tasks, parentObject.endingOfTasks),
-                                selection.tasks
-                            )
-                        ) : (
-                            parentObject.moveTasks(selection.tasks, Tag.forecastTag.endingOfTasks),
+                    ) : parentNode.object.constructor.name === "Tag" ? (
+                        (
+                            parentNode.object.moveTasks(selection.tasks, parentNode.object.endingOfTasks),
                             selection.tasks
                         )
                     ) : (
                         new Alert(
                             "Feature isn't available",
-                            "This feature is only available in recent OmniFocus 4 builds"
+                            "Feature is not available in current view."
                         ).show(),
                         []
                     )
                 };
-
-                // GENERICS
-                // isDigit :: Char -> Bool
-                const isDigit = c => {
-                    const n = c.codePointAt(0);
-
-                    return 48 <= n && 57 >= n;
-                };
-
-                // list :: StringOrArrayLike b => b -> [a]
-                const list = xs =>
-                    // xs itself, if it is an Array,
-                    // or an Array derived from xs.
-                    Array.isArray(xs) ? (
-                        xs
-                    ) : Array.from(xs || []);
-
-                // takeWhile :: (a -> Bool) -> [a] -> [a]
-                const takeWhile = p =>
-                    xs => {
-                        const i = xs.findIndex(x => !p(x));
-
-                        return -1 !== i ? (
-                            xs.slice(0, i)
-                        ) : xs;
-                    };
 
                 return main()
             };
 
             return omniJSContext()
         }), {
-            validate: selection => 0 < selection.tasks.length
-        })
+        validate: selection => 0 < selection.tasks.length
+    })
 )();
