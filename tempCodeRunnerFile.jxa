@@ -1,0 +1,107 @@
+(() => {
+    "use strict";
+
+    // OMNI JS CODE ---------------------------------------
+    const omniJSContext = () => {
+        // main :: IO ()
+        const main = () => {
+            const
+                win = document.windows[0],
+                selection = win.selection,
+                parentNode = win.content.nodeForObject(
+                    selection.tasks[0]
+                ).parent
+
+            // return parentNode.children[0].object.name
+            // return parentNode.object.beginning.constructor.name
+            // return parentNode.children.map(x => x.object.name)
+            return parentNode.isRootNode ? (
+                (
+                    new Alert(
+                        "Feature isn't available",
+                        "Parent node is root node."
+                    ).show(),
+                    []
+                )
+            ) : parentNode.object.constructor.name === "Task" || parentNode.object.constructor.name === "Project" ? (
+                (
+                    moveTasks(selection.tasks, parentNode.object.beginning),
+                    selection.tasks
+                )
+            ) : parentNode.object.constructor.name === "Tag" ? (
+                (
+                    parentNode.object.moveTasks(selection.tasks, parentNode.object.beginningOfTasks),
+                    selection.tasks
+                )
+            ) : (
+                new Alert(
+                    "Feature isn't available",
+                    "Feature is not available in current view."
+                ).show(),
+                []
+            )
+        };
+
+        // FUNCTIONS --
+
+        // MAIN -----------------------------------------
+        return main()
+    };
+
+    // readFile :: FilePath -> IO String
+    const readFile = fp => {
+        const
+            e = $(),
+
+            ns = $.NSString.stringWithContentsOfFileEncodingError(
+                $(fp).stringByStandardizingPath,
+                $.NSUTF8StringEncoding,
+                e
+            );
+        return ObjC.unwrap(
+            ns.isNil() ? (
+                e.localizedDescription
+            ) : ns
+        );
+    };
+
+    // evalOmniJSWithArgs :: Function ->
+    // [FilePath] -> [...OptionalArgs] -> a
+    const evalOmniJSWithArgs = (appName, fps, f, ...args) =>
+        Application(appName).evaluateJavascript(
+            `(() => {
+                "use strict";
+                ${fps.map(readFile).join("\n\n")}
+                return (${f})(${args.map(JSON.stringify)})
+            })();`
+        );
+
+    // sj :: a -> String
+    const sj = (...args) =>
+        // Abbreviation of showJSON for quick testing.
+        // Default indent size is two, which can be
+        // overriden by any integer supplied as the
+        // first argument of more than one.
+        JSON.stringify.apply(
+            null,
+            1 < args.length && !isNaN(args[0]) ? [
+                args[1], null, args[0]
+            ] : [args[0], null, 2]
+        );
+
+    // OmniJS Context Evaluation ------------------------------------------------
+    return 0 < Application("OmniFocus").documents.length ? (
+        evalOmniJSWithArgs(
+            "OmniFocus",
+            [
+                "~/prelude-jxa/jsPrelude.js",
+                "~/jsParserCombinators/parserCombinators.js",
+                "~/JS Libraries/OmniJS OmniFocus.js",
+                "~/JS Libraries/OmniJS.js",
+                "~/JS Libraries/JS Basics.js",
+                "~/JS Libraries/JS Trees.js"
+            ],
+            omniJSContext
+        )
+    ) : "No documents open in OmniFocus."
+})();

@@ -1,0 +1,57 @@
+/*{
+    "type": "action",
+    "author": "unlocked2412",
+    "version": "0.1",
+    "description": "A single-file plug-in.",
+}*/
+// Twitter: @unlocked2412
+// Test
+(() =>
+    Object.assign(
+        new PlugIn.Action(selection => {
+            // OMNI JS CODE ---------------------------------------
+            const omniJSContext = () => {
+                // main :: IO ()
+                const main = () => {
+                    const
+                        win = document.windows[0],
+                        selection = win.selection,
+                        parentNode = win.content.nodeForObject(
+                            selection.tasks[0]
+                        ).parent
+
+                    return parentNode.isRootNode ? (
+                        (
+                            new Alert(
+                                "Feature isn't available",
+                                "Parent node is root node."
+                            ).show(),
+                            []
+                        )
+                    ) : parentNode.object.constructor.name === "Task" || parentNode.object.constructor.name === "Project" ? (
+                        (
+                            moveTasks(selection.tasks, parentNode.object.beginning),
+                            selection.tasks
+                        )
+                    ) : parentNode.object.constructor.name === "Tag" ? (
+                        (
+                            parentNode.object.moveTasks(selection.tasks, parentNode.object.beginningOfTasks),
+                            selection.tasks
+                        )
+                    ) : (
+                        new Alert(
+                            "Feature isn't available",
+                            "Feature is not available in current view."
+                        ).show(),
+                        []
+                    )
+                };
+
+                return main()
+            };
+
+            return omniJSContext()
+        }), {
+        validate: selection => 0 < selection.tasks.length
+    })
+)();
