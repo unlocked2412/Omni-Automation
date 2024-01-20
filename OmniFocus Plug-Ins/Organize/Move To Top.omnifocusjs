@@ -16,9 +16,10 @@
                     const
                         win = document.windows[0],
                         selection = win.selection,
-                        parentNode = win.content.nodeForObject(
+                        contentTree = win.content,
+                        parentNode = contentTree.nodeForObject(
                             selection.tasks[0]
-                        ).parent
+                        ).parent;
 
                     return parentNode.isRootNode ? (
                         (
@@ -31,12 +32,12 @@
                     ) : parentNode.object.constructor.name === "Task" || parentNode.object.constructor.name === "Project" ? (
                         (
                             moveTasks(selection.tasks, parentNode.object.beginning),
-                            selection.tasks
+                            contentTree.select([])
                         )
                     ) : parentNode.object.constructor.name === "Tag" ? (
                         (
                             parentNode.object.moveTasks(selection.tasks, parentNode.object.beginningOfTasks),
-                            selection.tasks
+                            contentTree.select([])
                         )
                     ) : (
                         new Alert(
