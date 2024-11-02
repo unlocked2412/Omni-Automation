@@ -24,7 +24,7 @@
                             library.ending
                         ) : null === proj.parentFolder ? (
                             proj.after
-                        ) : proj.parentFolder.beginning
+                        ) : proj.parentFolder.ending
                     )
                 };
 

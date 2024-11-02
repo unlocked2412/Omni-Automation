@@ -1,5 +1,5 @@
 /*{
-	"type": "action"
+    "type": "action"
 }*/
 // Twitter: @unlocked2412
 (() =>
@@ -27,7 +27,7 @@
                     return (
                         new Alert(
                             'Total of estimated minutes',
-                            `${totalEstimatedMinutes} mins\n\n` + (
+                            `${minutesAsHHMM(totalEstimatedMinutes)}\n\n` + (
                                 'in descendants of selected project(s) or task(s).'
                             )
                         )
@@ -49,6 +49,24 @@
                         nest: xs || []
                     });
 
+                // Tuple (,) :: a -> b -> (a, b)
+                const Tuple = a =>
+                    // A pair of values, possibly of
+                    // different types.
+                    b => ({
+                        type: "Tuple",
+                        "0": a,
+                        "1": b,
+                        length: 2,
+                        *[Symbol.iterator]() {
+                            for (const k in this) {
+                                if (!isNaN(k)) {
+                                    yield this[k];
+                                }
+                            }
+                        }
+                    });
+
                 // concat :: [[a]] -> [a]
                 // concat :: [String] -> String
                 const concat = xs => (
@@ -58,6 +76,19 @@
                         ) : ''
                     ).concat(...ys) : ys
                 )(list(xs));
+
+                // divMod :: Int -> Int -> (Int, Int)
+                const divMod = n => d => {
+                    // Integer division, truncated toward negative infinity,
+                    // and integer modulus such that:
+                    // (x `div` y)*y + (x `mod` y) == x
+                    const [q, r] = [Math.trunc(n / d), n % d];
+
+                    return signum(n) === signum(-d)
+                        ? Tuple(q - 1)(r + d)
+                        : Tuple(q)(r);
+                };
+
 
                 // filter :: (a -> Bool) -> [a] -> [a]
                 const filter = p =>
@@ -82,7 +113,7 @@
                     // the shorter argument when one is non-finite,
                     // like cycle, repeat etc
                     'GeneratorFunction' !== xs.constructor
-                    .constructor.name ? (
+                        .constructor.name ? (
                         xs.length
                     ) : Infinity;
 
@@ -116,6 +147,17 @@
                 // root :: Tree a -> a
                 const root = tree =>
                     tree.root;
+
+                // signum :: Num -> Num
+                const signum = n =>
+                    // Sign of a number.
+                    n.constructor(
+                        0 > n
+                            ? -1
+                            : 0 < n
+                                ? 1
+                                : 0
+                    );
 
                 // sum :: [Num] -> Num
                 const sum = xs =>
@@ -157,13 +199,26 @@
                     return go(item);
                 };
 
+                // minutesAsHHMM :: Int -> String
+                const minutesAsHHMM = mins => {
+                    const
+                        pair = divMod(mins)(60),
+                        hours = pair[0],
+                        minutes = pair[1];
+                    return 0 === hours ? (
+                        `${minutes}m`
+                    ) : 0 === minutes ? (
+                        `${hours}h`
+                    ) : `${hours}h${minutes}m`
+                };
+
                 return main()
             };
 
             return omniJSContext()
         }), {
-            validate: selection => ["projects", "tasks"].some(
-                k => selection[k].length > 0
-            )
-        })
+        validate: selection => ["projects", "tasks"].some(
+            k => selection[k].length > 0
+        )
+    })
 )();
