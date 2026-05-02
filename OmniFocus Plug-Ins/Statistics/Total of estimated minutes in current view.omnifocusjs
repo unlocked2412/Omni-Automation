@@ -1,0 +1,238 @@
+/*{
+    "type": "action"
+}*/
+// Twitter: @unlocked2412
+(() =>
+    Object.assign(
+        new PlugIn.Action(selection => {
+            // OMNI JS CODE ---------------------------------------
+            const omniJSContext = () => {
+                // main :: IO ()
+                const main = () => {
+                    const
+                        node = document.windows[0].content.rootNode,
+                        tasks = tasksFromRootNodeInPostOrder(node),
+                        totalEstimatedMinutes = sum(
+                            map(x => x.estimatedMinutes || 0)(tasks)
+                        )
+                    return (
+                        new Alert(
+                            'Total of estimated minutes',
+                            `${minutesAsHHMM(totalEstimatedMinutes)}\n\n` + (
+                                'in current view.'
+                            )
+                        )
+                    ).show();
+                };
+
+
+                // FUNCTIONS --
+                // ------- JS Basics -------
+                // minutesAsHHMM :: Int -> String
+                const minutesAsHHMM = mins => {
+                    const
+                        pair = divMod(mins)(60),
+                        hours = pair[0],
+                        minutes = pair[1];
+                    return 0 === hours ? (
+                        `${minutes}m`
+                    ) : 0 === minutes ? (
+                        `${hours}h`
+                    ) : `${hours}h${minutes}m`
+                };
+
+                // ------- JS Prelude -------
+                // Node :: a -> [Tree a] -> Tree a
+                const Node = v =>
+                    // Constructor for a Tree node which connects a
+                    // value of some kind to a list of zero or
+                    // more child trees.
+                    xs => ({
+                        type: "Node",
+                        root: v,
+                        nest: xs || []
+                    });
+
+                // Tuple (,) :: a -> b -> (a, b)
+                const Tuple = a =>
+                    // A pair of values, possibly of
+                    // different types.
+                    b => ({
+                        type: "Tuple",
+                        "0": a,
+                        "1": b,
+                        length: 2,
+                        *[Symbol.iterator]() {
+                            for (const k in this) {
+                                if (!isNaN(k)) {
+                                    yield this[k];
+                                }
+                            }
+                        }
+                    });
+
+                // append (<>) :: [a] -> [a] -> [a]
+                const append = xs =>
+                    // Two lists joined into one.
+                    ys => xs.concat(ys);
+
+                // compose (<<<) :: (b -> c) -> (a -> b) -> a -> c
+                const compose = (...fs) =>
+                    // A function defined by the right-to-left
+                    // composition of all the functions in fs.
+                    fs.reduce(
+                        (f, g) => x => f(g(x)),
+                        x => x
+                    );
+
+                // concat :: [[a]] -> [a]
+                const concat = xs =>
+                    // The concatenation of all the lists
+                    // in a list of lists.
+                    xs.flat(1);
+
+                // concatMap :: (a -> [b]) -> [a] -> [b]
+                const concatMap = f =>
+                    // Concatenated results of a map of f over xs.
+                    // f is any function which returns a list value.
+                    // Any empty lists returned are filtered out by
+                    // the concatenation.
+                    xs => xs.flatMap(f);
+
+                // divMod :: Int -> Int -> (Int, Int)
+                const divMod = n => d => {
+                    // Integer division, truncated toward negative infinity,
+                    // and integer modulus such that:
+                    // (x `div` y)*y + (x `mod` y) == x
+                    const [q, r] = [Math.trunc(n / d), n % d];
+
+                    return signum(n) === signum(-d)
+                        ? Tuple(q - 1)(r + d)
+                        : Tuple(q)(r);
+                };
+
+                // filter :: (a -> Bool) -> [a] -> [a]
+                const filter = p =>
+                    // The elements of xs which match
+                    // the predicate p.
+                    xs => [...xs].filter(p);
+
+                // foldTree :: (a -> [b] -> b) -> Tree a -> b
+                const foldTree = f => {
+                    // The catamorphism on trees. A summary
+                    // value obtained by a depth-first fold.
+                    const go = tree => f(
+                        root(tree)
+                    )(
+                        nest(tree).map(go)
+                    );
+
+                    return go;
+                };
+
+                // length :: [a] -> Int
+                const length = xs =>
+                    // Returns Infinity over objects without finite
+                    // length. This enables zip and zipWith to choose
+                    // the shorter argument when one is non-finite,
+                    // like cycle, repeat etc
+                    "Node" !== xs.type
+                        ? "GeneratorFunction" !== (
+                            xs.constructor.constructor.name
+                        )
+                            ? xs.length
+                            : Infinity
+                        : lengthTree(xs);
+
+                // lengthTree :: Tree a -> Int
+                const lengthTree = tree => {
+                    // The number of nodes in the tree.
+                    const go = (n, t) =>
+                        n + nest(t).reduce(go, 1);
+
+                    return go(0, tree);
+                };
+
+                // map :: (a -> b) -> [a] -> [b]
+                const map = f =>
+                    // The list obtained by applying f
+                    // to each element of xs.
+                    // (The image of xs under f).
+                    xs => [...xs].map(f);
+
+                // nest :: Tree a -> [a]
+                const nest = tree => {
+                    // Allowing for lazy (on-demand) evaluation.
+                    // If the nest turns out to be a function –
+                    // rather than a list – that function is applied
+                    // here to the root, and returns a list.
+                    const xs = tree.nest;
+
+                    return "function" !== typeof xs
+                        ? xs
+                        : xs(root(tree));
+                };
+
+                // root :: Tree a -> a
+                const root = tree =>
+                    // The value attached to a tree node.
+                    tree.root;
+
+                // signum :: Num -> Num
+                const signum = n =>
+                    // Sign of a number.
+                    n.constructor(
+                        0 > n
+                            ? -1
+                            : 0 < n
+                                ? 1
+                                : 0
+                    );
+
+                // sum :: [Num] -> Num
+                const sum = xs =>
+                    // The numeric sum of all values in xs.
+                    xs.reduce((a, x) => a + x, 0);
+
+                // ------- OmniJS OmniFocus -------
+                // fmapPureOF :: (Task -> a) -> (Project | Task) -> Tree a
+                const fmapPureOF = f => t => {
+                    const go = x => {
+                        const v = 'Project' !== x.constructor.name ? (
+                            x
+                        ) : x.task;
+                        return Node(f(v))((
+                            v
+                            // replaced tasks in place
+                            // of children
+                        ).children.map(go));
+                    }
+                    return go(t);
+                };
+
+                // tasksFromRootNodeInPostOrder :: TreeNode -> [Task]
+                const tasksFromRootNodeInPostOrder = rootNode =>
+                    concatMap(
+                        compose(
+                            filter(x => x.constructor.name === "Task"),
+                            foldTree(x => xs => append(concat(xs))([x])),
+                            fmapPureOF(x => {
+                                const
+                                    v = x.object;
+                                return v.constructor.name === "Project" ? (
+                                    v.task
+                                ) : v
+                            })
+                        )
+                    )(
+                        rootNode.children
+                    )
+
+                return main()
+            };
+
+            return omniJSContext()
+        }), {
+        validate: selection => true
+    })
+)();
